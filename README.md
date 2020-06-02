@@ -12,8 +12,8 @@ bazel build :FoodFinder
 
 To run:
 ```
-bazel run :FoodSupplier
-bazel run :FoodFinder
+./bazel-bin/FoodSupplier
+./bazel-bin/FoodFinder
 ```
 
 Some code was inspired by https://github.com/arcticmatt/grpc_getting_started
