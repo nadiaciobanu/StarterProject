@@ -19,14 +19,15 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <map>
 
 #include <grpcpp/grpcpp.h>
 
-//#ifdef BAZEL_BUILD
+#ifdef BAZEL_BUILD
 #include "food.grpc.pb.h"
-//#else
-//#include "food.grpc.pb.h"
-//#endif
+#else
+#include "food.grpc.pb.h"
+#endif
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -36,13 +37,20 @@ using food::FoodService;
 using food::FoodRequest;
 using food::FoodReply;
 
+std::map<std::string, std::string> vendorMap;
+
+
 // Logic and data behind the server's behavior.
 class FoodServiceImpl final : public FoodService::Service {
 
   Status GetVendors(ServerContext* context, const FoodRequest* request,
                   FoodReply* reply) override {
-
-    std::string vendors("Safeway, Costco, Walmart");
+    std::string ingredient = request->ingredient();
+    std::string vendors = "None";
+  
+    if (vendorMap.find(ingredient) != vendorMap.end()) {
+      vendors = vendorMap[ingredient];
+    }
     reply->set_vendors(vendors);
     return Status::OK;
   }
@@ -69,7 +77,15 @@ void RunServer() {
   server->Wait();
 }
 
+void initVendors() {
+  vendorMap["eggs"] = "Costco";
+  vendorMap["milk"] = "Costco, Safeway";
+  vendorMap["flour"] = "Safeway, Superstore";
+  vendorMap["sugar"] = "Costco, Safeway, Superstore";
+}
+
 int main(int argc, char** argv) {
+  initVendors();
   RunServer();
 
   return 0;
