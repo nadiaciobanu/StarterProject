@@ -42,8 +42,8 @@ class FoodServiceImpl final : public FoodService::Service {
   Status GetVendors(ServerContext* context, const FoodRequest* request,
                   FoodReply* reply) override {
 
-    std::string prefix("Hello ");
-    reply->set_vendors(prefix + request->ingredient());
+    std::string vendors("Safeway, Costco, Walmart");
+    reply->set_vendors(vendors);
     return Status::OK;
   }
 };

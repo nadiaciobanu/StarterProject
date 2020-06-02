@@ -73,22 +73,37 @@ class FoodFinder {
 };
 
 int main(int argc, char** argv) {
-  std::string address = "localhost";
-  std::string port = "50051";
-  std::string server_address = address + ":" + port;
-  std::cout << "Client querying server address: " << server_address << std::endl;
+  std::cout << std::endl << "Welcome to FoodFinder!" << std::endl;
+  std::string inputIngredient = "";
+
+  while (true) {
+    std::cout << std::endl << "Please input the ingredient you would like to find (X to quit): ";
+
+    std::string inputIngredient;
+    std::cin >> inputIngredient;
+
+    if (inputIngredient.compare("X") == 0) {
+      break;
+    }
+
+    std::cout << "Searching for vendors for " << inputIngredient << "..." <<std::endl;
+
+    std::string address = "localhost";
+    std::string port = "50051";
+    std::string server_address = address + ":" + port;
+    //std::cout << "Client querying server address: " << server_address << std::endl;
 
 
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint (in this case,
-  // localhost at port 50051). We indicate that the channel isn't authenticated
-  // (use of InsecureChannelCredentials()).
-  FoodFinder finder(grpc::CreateChannel(
-      server_address, grpc::InsecureChannelCredentials()));
-  std::string ingredient("egg");
+    // Instantiate the client. It requires a channel, out of which the actual RPCs
+    // are created. This channel models a connection to an endpoint (in this case,
+    // localhost at port 50051). We indicate that the channel isn't authenticated
+    // (use of InsecureChannelCredentials()).
+    FoodFinder finder(grpc::CreateChannel(
+        server_address, grpc::InsecureChannelCredentials()));
 
-  std::string reply = finder.GetVendors(ingredient);
-  std::cout << "FoodFinder received: " << reply << std::endl;
+    std::string reply = finder.GetVendors(inputIngredient);
+    std::cout << "Vendors found: " << reply << std::endl;
+  }
 
   return 0;
 }
