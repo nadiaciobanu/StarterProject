@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <sstream>
 
 #include <grpcpp/grpcpp.h>
 
@@ -78,7 +79,7 @@ class FoodFinder {
         }
     }
 
-    int GetIngredientInfo(const std::string& ingredient, const std::string& vendorName) {
+    std::string GetIngredientInfo(const std::string& ingredient, const std::string& vendorName) {
         // Data we are sending to the server.
         VendorRequest request;
         request.set_ingredient(ingredient);
@@ -96,18 +97,24 @@ class FoodFinder {
 
         // Act upon its status.
         if (status.ok()) {
-            return reply.inventorycount();
+            return formatIngredientInfo(reply.inventorycount(), reply.price());
         }
         else {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
-            return -1;
+            return "Information not found";
         }
     }
 
 
  private:
     std::unique_ptr<FoodService::Stub> stub_;
+
+    std::string formatIngredientInfo(int invCount, float price) {
+        std::ostringstream oss;
+        oss << invCount << " available @ $" << price;
+        return oss.str();
+    }
 };
 
 
@@ -137,19 +144,16 @@ void runFoodFinder() {
 
         std::vector<std::string> vendors = finder.GetVendors(inputIngredient);
 
-        //int ingredientInfo = finder.GetIngredientInfo(inputIngredient, "Costco");
-
-        if (vendors.size() > 0) {
-            std::cout << "Vendors found:" << std::endl;
-            for (std::string vendor : vendors) {
-                std::cout << "- " << vendor << std::endl;
-            }
-        }
-        else {
+        if (vendors.size() == 0) {
             std::cout << "Vendors found: None" << std::endl;
+            continue;
         }
-        
-        //std::cout << "Ingredient info found: " << ingredientInfo << std::endl;
+
+        //for (int i=0; i<vendors.size(); i++) {
+            //std::string ingredientInfo = finder.GetIngredientInfo(inputIngredient, vendors[i]);
+            //std::cout << "- " << vendors[i] << ": " << ingredientInfo << std::endl;
+        //}
+
     }
 }
 
