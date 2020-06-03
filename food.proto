@@ -13,18 +13,26 @@
 syntax = "proto3";
 package food;
 
-// The food finder service definition.
-service FoodSupplierService {
-    // Sends a greeting
+
+service FoodService {
     rpc GetVendors (SupplierRequest) returns (SupplierReply) {}
+    rpc GetIngredientInfo (VendorRequest) returns (VendorReply) {}
 }
 
-// The request message containing the ingredient
 message SupplierRequest {
     string ingredient = 1;
 }
 
-// The response message containing the vendors
 message SupplierReply {
     string vendors = 1;
+}
+
+message VendorRequest {
+    string ingredient = 1;
+    string vendorName = 2;
+}
+
+message VendorReply {
+    int32 inventoryCount = 1;
+    float price = 2;
 }

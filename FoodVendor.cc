@@ -34,34 +34,31 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 using food::FoodService;
-using food::SupplierRequest;
-using food::SupplierReply;
+using food::VendorRequest;
+using food::VendorReply;
 
 std::map<std::string, std::string> vendorMap;
 
 
 // Logic and data behind the server's behavior.
-class FoodSupplierService final : public FoodService::Service {
+class FoodVendorService final : public FoodService::Service {
 
-    Status GetVendors(ServerContext* context, const SupplierRequest* request,
-                      SupplierReply* reply) override {
-        std::string ingredient = request->ingredient();
-        std::string vendors = "None";
-    
-        if (vendorMap.find(ingredient) != vendorMap.end()) {
-            vendors = vendorMap[ingredient];
-        }
-        reply->set_vendors(vendors);
+    Status GetIngredientInfo(ServerContext* context, const VendorRequest* request,
+                             VendorReply* reply) override {
+        //std::string ingredient = request->ingredient();
+
+        reply->set_inventorycount(3);
+        reply->set_price(10.00);
         return Status::OK;
     }
 };
 
 
-void runFoodSupplier() {
+void runFoodVendor() {
     std::string address = "0.0.0.0";
     std::string port = "50051";
     std::string server_address = address + ":" + port;
-    FoodSupplierService service;
+    FoodVendorService service;
 
     ServerBuilder builder;
     // Listen on the given address without any authentication mechanism.
@@ -89,7 +86,7 @@ void initVendors() {
 
 int main(int argc, char** argv) {
     initVendors();
-    runFoodSupplier();
+    runFoodVendor();
 
     return 0;
 }

@@ -31,14 +31,16 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using food::FoodSupplierService;
+using food::FoodService;
 using food::SupplierRequest;
 using food::SupplierReply;
+using food::VendorRequest;
+using food::VendorReply;
 
 class FoodFinder {
  public:
     FoodFinder(std::shared_ptr<Channel> channel)
-            : stub_(FoodSupplierService::NewStub(channel)) {}
+            : stub_(FoodService::NewStub(channel)) {}
 
     // Assembles the client's payload, sends it and presents the response back
     // from the server.
@@ -68,8 +70,36 @@ class FoodFinder {
         }
     }
 
+    int GetIngredientInfo(const std::string& ingredient, const std::string& vendorName) {
+        // Data we are sending to the server.
+        VendorRequest request;
+        request.set_ingredient(ingredient);
+        request.set_vendorname(vendorName);
+
+        // Container for the data we expect from the server.
+        VendorReply reply;
+
+        // Context for the client. It could be used to convey extra information to
+        // the server and/or tweak certain RPC behaviors.
+        ClientContext context;
+
+        // The actual RPC.
+        Status status = stub_->GetIngredientInfo(&context, request, &reply);
+
+        // Act upon its status.
+        if (status.ok()) {
+            return reply.inventorycount();
+        }
+        else {
+            std::cout << status.error_code() << ": " << status.error_message()
+                      << std::endl;
+            return -1;
+        }
+    }
+
+
  private:
-    std::unique_ptr<FoodSupplierService::Stub> stub_;
+    std::unique_ptr<FoodService::Stub> stub_;
 };
 
 
@@ -97,8 +127,12 @@ void runFoodFinder() {
 
         std::cout << "Searching for vendors for " << inputIngredient << "..." <<std::endl;
 
-        std::string reply = finder.GetVendors(inputIngredient);
-        std::cout << "Vendors found: " << reply << std::endl;
+        //std::string vendors = finder.GetVendors(inputIngredient);
+
+        int ingredientInfo = finder.GetIngredientInfo(inputIngredient, "Costco");
+
+        //std::cout << "Vendors found: " << reply << std::endl;
+        std::cout << "Ingredient info found: " << ingredientInfo << std::endl;
     }
 }
 

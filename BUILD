@@ -60,3 +60,14 @@ cc_binary(
         "@com_github_grpc_grpc//:grpc++",
     ],
 )
+
+cc_binary(
+    name = "FoodVendor",
+    srcs = ["FoodVendor.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":food_cc_grpc",
+        # http_archive made this label available for binding
+        "@com_github_grpc_grpc//:grpc++",
+    ],
+)
