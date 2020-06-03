@@ -22,33 +22,33 @@
 
 #include <grpcpp/grpcpp.h>
 
-//#ifdef BAZEL_BUILD
+#ifdef BAZEL_BUILD
 #include "food.grpc.pb.h"
-//#else
-//#include "food.grpc.pb.h"
-//#endif
+#else
+#include "food.grpc.pb.h"
+#endif
 
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using food::FoodService;
-using food::FoodRequest;
-using food::FoodReply;
+using food::FoodSupplierService;
+using food::SupplierRequest;
+using food::SupplierReply;
 
 class FoodFinder {
  public:
   FoodFinder(std::shared_ptr<Channel> channel)
-      : stub_(FoodService::NewStub(channel)) {}
+      : stub_(FoodSupplierService::NewStub(channel)) {}
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
   std::string GetVendors(const std::string& ingredient) {
     // Data we are sending to the server.
-    FoodRequest request;
+    SupplierRequest request;
     request.set_ingredient(ingredient);
 
     // Container for the data we expect from the server.
-    FoodReply reply;
+    SupplierReply reply;
 
     // Context for the client. It could be used to convey extra information to
     // the server and/or tweak certain RPC behaviors.
@@ -69,12 +69,24 @@ class FoodFinder {
   }
 
  private:
-  std::unique_ptr<FoodService::Stub> stub_;
+  std::unique_ptr<FoodSupplierService::Stub> stub_;
 };
 
 int main(int argc, char** argv) {
   std::cout << std::endl << "Welcome to FoodFinder!" << std::endl;
   std::string inputIngredient = "";
+
+  std::string address = "localhost";
+  std::string port = "50051";
+  std::string server_address = address + ":" + port;
+  //std::cout << "Client querying server address: " << server_address << std::endl;
+
+  // Instantiate the client. It requires a channel, out of which the actual RPCs
+  // are created. This channel models a connection to an endpoint (in this case,
+  // localhost at port 50051). We indicate that the channel isn't authenticated
+  // (use of InsecureChannelCredentials()).
+  FoodFinder finder(grpc::CreateChannel(
+      server_address, grpc::InsecureChannelCredentials()));
 
   while (true) {
     std::cout << std::endl << "Please input the ingredient you would like to find (X to quit): ";
@@ -87,19 +99,6 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "Searching for vendors for " << inputIngredient << "..." <<std::endl;
-
-    std::string address = "localhost";
-    std::string port = "50051";
-    std::string server_address = address + ":" + port;
-    //std::cout << "Client querying server address: " << server_address << std::endl;
-
-
-    // Instantiate the client. It requires a channel, out of which the actual RPCs
-    // are created. This channel models a connection to an endpoint (in this case,
-    // localhost at port 50051). We indicate that the channel isn't authenticated
-    // (use of InsecureChannelCredentials()).
-    FoodFinder finder(grpc::CreateChannel(
-        server_address, grpc::InsecureChannelCredentials()));
 
     std::string reply = finder.GetVendors(inputIngredient);
     std::cout << "Vendors found: " << reply << std::endl;
