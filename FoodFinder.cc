@@ -122,17 +122,19 @@ void runFoodFinder() {
     std::cout << std::endl << "Welcome to FoodFinder!" << std::endl;
     std::string inputIngredient = "";
 
-    std::string address = "localhost";
-    std::string port = "50051";
-    std::string server_address = address + ":" + port;
+    std::string supplier_address = "localhost:50051";
+    std::string vendor_address = "localhost:50061";
     //std::cout << "Client querying server address: " << server_address << std::endl;
 
     // Instantiate the client. It requires a channel, out of which the actual RPCs
     // are created. This channel models a connection to an endpoint (in this case,
     // localhost at port 50051). We indicate that the channel isn't authenticated
     // (use of InsecureChannelCredentials()).
-    FoodFinder finder(grpc::CreateChannel(
-            server_address, grpc::InsecureChannelCredentials()));
+    FoodFinder supplierFinder(grpc::CreateChannel(
+            supplier_address, grpc::InsecureChannelCredentials()));
+
+    FoodFinder vendorFinder(grpc::CreateChannel(
+            vendor_address, grpc::InsecureChannelCredentials()));
 
     while (true) {
         std::cout << std::endl << "Please input the ingredient you would like to find: ";
@@ -142,17 +144,17 @@ void runFoodFinder() {
 
         std::cout << "Searching for vendors for " << inputIngredient << "..." <<std::endl;
 
-        std::vector<std::string> vendors = finder.GetVendors(inputIngredient);
+        std::vector<std::string> vendors = supplierFinder.GetVendors(inputIngredient);
 
         if (vendors.size() == 0) {
             std::cout << "Vendors found: None" << std::endl;
             continue;
         }
 
-        //for (int i=0; i<vendors.size(); i++) {
-            //std::string ingredientInfo = finder.GetIngredientInfo(inputIngredient, vendors[i]);
-            //std::cout << "- " << vendors[i] << ": " << ingredientInfo << std::endl;
-        //}
+        for (int i=0; i<vendors.size(); i++) {
+            std::string ingredientInfo = vendorFinder.GetIngredientInfo(inputIngredient, vendors[i]);
+            std::cout << "- " << vendors[i] << ": " << ingredientInfo << std::endl;
+        }
 
     }
 }

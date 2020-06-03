@@ -56,7 +56,7 @@ class FoodVendorService final : public FoodService::Service {
 
 void runFoodVendor() {
     std::string address = "0.0.0.0";
-    std::string port = "50051";
+    std::string port = "50061";
     std::string server_address = address + ":" + port;
     FoodVendorService service;
 
