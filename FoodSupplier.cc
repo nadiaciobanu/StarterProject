@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,50 +43,53 @@ std::map<std::string, std::string> vendorMap;
 // Logic and data behind the server's behavior.
 class FoodSupplierServiceImpl final : public FoodSupplierService::Service {
 
-  Status GetVendors(ServerContext* context, const SupplierRequest* request,
-                  SupplierReply* reply) override {
-    std::string ingredient = request->ingredient();
-    std::string vendors = "None";
-  
-    if (vendorMap.find(ingredient) != vendorMap.end()) {
-      vendors = vendorMap[ingredient];
+    Status GetVendors(ServerContext* context, const SupplierRequest* request,
+                      SupplierReply* reply) override {
+        std::string ingredient = request->ingredient();
+        std::string vendors = "None";
+    
+        if (vendorMap.find(ingredient) != vendorMap.end()) {
+            vendors = vendorMap[ingredient];
+        }
+        reply->set_vendors(vendors);
+        return Status::OK;
     }
-    reply->set_vendors(vendors);
-    return Status::OK;
-  }
 };
 
-void RunServer() {
-  std::string address = "0.0.0.0";
-  std::string port = "50051";
-  std::string server_address = address + ":" + port;
-  FoodSupplierServiceImpl service;
 
-  ServerBuilder builder;
-  // Listen on the given address without any authentication mechanism.
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  // Register "service" as the instance through which we'll communicate with
-  // clients. In this case it corresponds to an *synchronous* service.
-  builder.RegisterService(&service);
-  // Finally assemble the server.
-  std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+void runFoodSupplier() {
+    std::string address = "0.0.0.0";
+    std::string port = "50051";
+    std::string server_address = address + ":" + port;
+    FoodSupplierServiceImpl service;
 
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
-  server->Wait();
+    ServerBuilder builder;
+    // Listen on the given address without any authentication mechanism.
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    // Register "service" as the instance through which we'll communicate with
+    // clients. In this case it corresponds to an *synchronous* service.
+    builder.RegisterService(&service);
+    // Finally assemble the server.
+    std::unique_ptr<Server> server(builder.BuildAndStart());
+    std::cout << "Server listening on " << server_address << std::endl;
+
+    // Wait for the server to shutdown. Note that some other thread must be
+    // responsible for shutting down the server for this call to ever return.
+    server->Wait();
 }
+
 
 void initVendors() {
-  vendorMap["eggs"] = "Costco";
-  vendorMap["milk"] = "Costco, Safeway";
-  vendorMap["flour"] = "Safeway, Superstore";
-  vendorMap["sugar"] = "Costco, Safeway, Superstore";
+    vendorMap["eggs"] = "Costco";
+    vendorMap["milk"] = "Costco, Safeway";
+    vendorMap["flour"] = "Safeway, Superstore";
+    vendorMap["sugar"] = "Costco, Safeway, Superstore";
 }
 
-int main(int argc, char** argv) {
-  initVendors();
-  RunServer();
 
-  return 0;
+int main(int argc, char** argv) {
+    initVendors();
+    runFoodSupplier();
+
+    return 0;
 }
