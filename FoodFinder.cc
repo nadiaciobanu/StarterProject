@@ -44,7 +44,7 @@ class FoodFinder {
 
     // Assembles the client's payload, sends it and presents the response back
     // from the server.
-    std::string GetVendors(const std::string& ingredient) {
+    std::vector<std::string> GetVendors(const std::string& ingredient) {
         // Data we are sending to the server.
         SupplierRequest request;
         request.set_ingredient(ingredient);
@@ -61,12 +61,20 @@ class FoodFinder {
 
         // Act upon its status.
         if (status.ok()) {
-            return reply.vendors();
+            if (reply.vendors_size() == 0) {
+                return {};
+            }
+            std::vector<std::string> vendors;
+
+            for (std::string vendor : reply.vendors()) {
+                vendors.push_back(vendor);
+            }
+            return vendors;
         }
         else {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
-            return "RPC failed";
+            return {};
         }
     }
 
@@ -127,12 +135,21 @@ void runFoodFinder() {
 
         std::cout << "Searching for vendors for " << inputIngredient << "..." <<std::endl;
 
-        //std::string vendors = finder.GetVendors(inputIngredient);
+        std::vector<std::string> vendors = finder.GetVendors(inputIngredient);
 
-        int ingredientInfo = finder.GetIngredientInfo(inputIngredient, "Costco");
+        //int ingredientInfo = finder.GetIngredientInfo(inputIngredient, "Costco");
 
-        //std::cout << "Vendors found: " << reply << std::endl;
-        std::cout << "Ingredient info found: " << ingredientInfo << std::endl;
+        if (vendors.size() > 0) {
+            std::cout << "Vendors found:" << std::endl;
+            for (std::string vendor : vendors) {
+                std::cout << "- " << vendor << std::endl;
+            }
+        }
+        else {
+            std::cout << "Vendors found: None" << std::endl;
+        }
+        
+        //std::cout << "Ingredient info found: " << ingredientInfo << std::endl;
     }
 }
 

@@ -24,7 +24,7 @@ message SupplierRequest {
 }
 
 message SupplierReply {
-    string vendors = 1;
+    repeated string vendors = 1;
 }
 
 message VendorRequest {

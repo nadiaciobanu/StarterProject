@@ -37,7 +37,7 @@ using food::FoodService;
 using food::SupplierRequest;
 using food::SupplierReply;
 
-std::map<std::string, std::string> vendorMap;
+std::map<std::string, std::vector<std::string>> vendorMap;
 
 
 // Logic and data behind the server's behavior.
@@ -46,12 +46,14 @@ class FoodSupplierService final : public FoodService::Service {
     Status GetVendors(ServerContext* context, const SupplierRequest* request,
                       SupplierReply* reply) override {
         std::string ingredient = request->ingredient();
-        std::string vendors = "None";
+        std::vector<std::string> vendors;
     
         if (vendorMap.find(ingredient) != vendorMap.end()) {
             vendors = vendorMap[ingredient];
+            for (std::string vendor : vendors) {
+                reply->add_vendors(vendor);
+            }
         }
-        reply->set_vendors(vendors);
         return Status::OK;
     }
 };
@@ -80,10 +82,10 @@ void runFoodSupplier() {
 
 
 void initVendors() {
-    vendorMap["eggs"] = "Costco";
-    vendorMap["milk"] = "Costco, Safeway";
-    vendorMap["flour"] = "Safeway, Superstore";
-    vendorMap["sugar"] = "Costco, Safeway, Superstore";
+    vendorMap["eggs"] = {"Costco"};
+    vendorMap["milk"] = {"Costco", "Safeway"};
+    vendorMap["flour"] = {"Safeway", "Superstore"};
+    vendorMap["sugar"] = {"Costco", "Safeway", "Superstore"};
 }
 
 
