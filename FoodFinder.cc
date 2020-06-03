@@ -124,12 +124,7 @@ void runFoodFinder() {
 
     std::string supplier_address = "localhost:50051";
     std::string vendor_address = "localhost:50061";
-    //std::cout << "Client querying server address: " << server_address << std::endl;
 
-    // Instantiate the client. It requires a channel, out of which the actual RPCs
-    // are created. This channel models a connection to an endpoint (in this case,
-    // localhost at port 50051). We indicate that the channel isn't authenticated
-    // (use of InsecureChannelCredentials()).
     FoodFinder supplierFinder(grpc::CreateChannel(
             supplier_address, grpc::InsecureChannelCredentials()));
 
@@ -151,11 +146,10 @@ void runFoodFinder() {
             continue;
         }
 
-        for (int i=0; i<vendors.size(); i++) {
-            std::string ingredientInfo = vendorFinder.GetIngredientInfo(inputIngredient, vendors[i]);
-            std::cout << "- " << vendors[i] << ": " << ingredientInfo << std::endl;
+        for (std::string vendor : vendors) {
+            std::string ingredientInfo = vendorFinder.GetIngredientInfo(inputIngredient, vendor);
+            std::cout << "- " << vendor << ": " << ingredientInfo << std::endl;
         }
-
     }
 }
 

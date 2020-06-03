@@ -37,7 +37,8 @@ using food::FoodService;
 using food::VendorRequest;
 using food::VendorReply;
 
-std::map<std::string, std::string> vendorMap;
+std::map<std::string, std::map<std::string, float>> inventories;
+std::map<std::string, std::map<std::string, float>> prices;
 
 
 // Logic and data behind the server's behavior.
@@ -45,10 +46,14 @@ class FoodVendorService final : public FoodService::Service {
 
     Status GetIngredientInfo(ServerContext* context, const VendorRequest* request,
                              VendorReply* reply) override {
-        //std::string ingredient = request->ingredient();
+        std::string vendor = request->vendorname();
+        std::string ingredient = request->ingredient();
 
-        reply->set_inventorycount(3);
-        reply->set_price(10.00);
+        int inventory = inventories[vendor][ingredient];
+        float price = prices[vendor][ingredient];
+
+        reply->set_inventorycount(inventory);
+        reply->set_price(price);
         return Status::OK;
     }
 };
@@ -76,16 +81,21 @@ void runFoodVendor() {
 }
 
 
-void initVendors() {
-    vendorMap["eggs"] = "Costco";
-    vendorMap["milk"] = "Costco, Safeway";
-    vendorMap["flour"] = "Safeway, Superstore";
-    vendorMap["sugar"] = "Costco, Safeway, Superstore";
+void initInventories() {
+    inventories["Costco"] = {{"eggs", 10}, {"milk", 45}, {"sugar", 24}};
+    inventories["Safeway"] = {{"milk", 65}, {"sugar", 20}, {"flour", 58}};
+    inventories["Superstore"] = {{"flour", 4}, {"sugar", 18}};
 }
 
+void initPrices() {
+    prices["Costco"] = {{"eggs", 1.00}, {"milk", 2.75}, {"sugar", 4.00}};
+    prices["Safeway"] = {{"milk", 3.50}, {"sugar", 3.00}, {"flour", 5.45}};
+    prices["Superstore"] = {{"flour", 2.00}, {"sugar", 3.35}};
+}
 
 int main(int argc, char** argv) {
-    initVendors();
+    initInventories();
+    initPrices();
     runFoodVendor();
 
     return 0;
