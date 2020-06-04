@@ -29,6 +29,11 @@
 #include "food.grpc.pb.h"
 #endif
 
+#include "absl/strings/string_view.h"
+#include "opencensus/exporters/trace/zipkin/zipkin_exporter.h"
+#include "opencensus/trace/sampler.h"
+#include "opencensus/trace/span.h"
+
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
@@ -62,13 +67,12 @@ class FoodFinder {
 
         // Act upon its status.
         if (status.ok()) {
-            if (reply.vendors_size() == 0) {
-                return {};
-            }
-            std::vector<std::string> vendors;
+            std::vector<std::string> vendors = {};
 
-            for (std::string vendor : reply.vendors()) {
-                vendors.push_back(vendor);
+            if (reply.vendors_size() > 0) {
+                for (std::string vendor : reply.vendors()) {
+                    vendors.push_back(vendor);
+                }
             }
             return vendors;
         }
@@ -131,7 +135,17 @@ void runFoodFinder() {
     FoodFinder vendorFinder(grpc::CreateChannel(
             vendor_address, grpc::InsecureChannelCredentials()));
 
+    static opencensus::trace::AlwaysSampler sampler;
+
+    // Initialize and enable the Zipkin trace exporter.
+    const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
+    opencensus::exporters::trace::ZipkinExporter::Register(
+        opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
+
     while (true) {
+        opencensus::trace::Span replSpan = opencensus::trace::Span::StartSpan(
+        "FoodFinder", /* parent = */ nullptr, {&sampler});
+
         std::cout << std::endl << "Please input the ingredient you would like to find: ";
 
         std::string inputIngredient;
@@ -140,6 +154,8 @@ void runFoodFinder() {
         std::cout << "Searching for vendors for " << inputIngredient << "..." <<std::endl;
 
         std::vector<std::string> vendors = supplierFinder.GetVendors(inputIngredient);
+
+        replSpan.End();
 
         if (vendors.size() == 0) {
             std::cout << "Vendors found: None" << std::endl;

@@ -47,7 +47,13 @@ cc_binary(
         ":food_cc_grpc",
         # http_archive made this label available for binding
         "@com_github_grpc_grpc//:grpc++",
-    ],
+        # For OpenCensus
+        "@io_opencensus_cpp//opencensus/trace",
+        "@io_opencensus_cpp//opencensus/exporters/trace/zipkin:zipkin_exporter",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+],
 )
 
 cc_binary(

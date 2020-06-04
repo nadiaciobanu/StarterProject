@@ -35,3 +35,80 @@ grpc_deps()
 # Not mentioned in official docs... mentioned here https://github.com/grpc/grpc/issues/20511
 load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 grpc_extra_deps()
+
+
+##### For OpenCensus
+
+http_archive(
+    name = "io_opencensus_cpp",
+    strip_prefix = "opencensus-cpp-master",
+    urls = ["https://github.com/census-instrumentation/opencensus-cpp/archive/master.zip"],
+)
+
+# OpenCensus depends on Abseil so we have to explicitly to pull it in.
+# This is how diamond dependencies are prevented.
+http_archive(
+    name = "com_google_absl",
+    strip_prefix = "abseil-cpp-master",
+    urls = ["https://github.com/abseil/abseil-cpp/archive/master.zip"]
+)
+
+# Curl library used by the Zipkin exporter
+http_archive(
+    name = "com_github_curl",
+    build_file_content =
+        """
+load("@io_opencensus_cpp//opencensus:curl.bzl", "CURL_COPTS")
+package(features = ['no_copts_tokenization'])
+config_setting(
+    name = "windows",
+    values = {"cpu": "x64_windows"},
+    visibility = [ "//visibility:private" ],
+)
+config_setting(
+    name = "osx",
+    values = {"cpu": "darwin"},
+    visibility = [ "//visibility:private" ],
+)
+cc_library(
+    name = "curl",
+    srcs = glob([
+        "lib/**/*.c",
+    ]),
+    hdrs = glob([
+        "include/curl/*.h",
+        "lib/**/*.h",
+    ]),
+    includes = ["include/", "lib/"],
+    copts = CURL_COPTS + [
+        "-DOS=\\"os\\"",
+        "-DCURL_EXTERN_SYMBOL=__attribute__((__visibility__(\\"default\\")))",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
+    strip_prefix = "curl-master",
+    urls = ["https://github.com/curl/curl/archive/master.zip"],
+)
+
+# Rapidjson library - used by the Zipkin exporter.
+http_archive(
+    name = "com_github_tencent_rapidjson",
+    build_file_content =
+        """
+cc_library(
+    name = "rapidjson",
+    srcs = [],
+    hdrs = glob([
+        "include/rapidjson/*.h",
+        "include/rapidjson/internal/*.h",
+        "include/rapidjson/error/*.h",
+    ]),
+    includes = ["include/"],
+    defines = ["RAPIDJSON_HAS_STDSTRING=1",],
+    visibility = ["//visibility:public"],
+)
+""",
+    strip_prefix = "rapidjson-master",
+    urls = ["https://github.com/Tencent/rapidjson/archive/master.zip"],
+)
