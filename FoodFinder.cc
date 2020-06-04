@@ -124,7 +124,6 @@ class FoodFinder {
 
 void runFoodFinder() {
     std::cout << std::endl << "Welcome to FoodFinder!" << std::endl;
-    std::string inputIngredient = "";
 
     std::string supplier_address = "localhost:50051";
     std::string vendor_address = "localhost:50061";
@@ -143,9 +142,6 @@ void runFoodFinder() {
         opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
 
     while (true) {
-        opencensus::trace::Span replSpan = opencensus::trace::Span::StartSpan(
-        "FoodFinder", /* parent = */ nullptr, {&sampler});
-
         std::cout << std::endl << "Please input the ingredient you would like to find: ";
 
         std::string inputIngredient;
@@ -153,9 +149,13 @@ void runFoodFinder() {
 
         std::cout << "Searching for vendors for " << inputIngredient << "..." <<std::endl;
 
+        // Trace call to FoodSupplier
+        opencensus::trace::Span supplierSpan = opencensus::trace::Span::StartSpan(
+            "FoodSupplier", /* parent = */ nullptr, {&sampler});
+
         std::vector<std::string> vendors = supplierFinder.GetVendors(inputIngredient);
 
-        replSpan.End();
+        supplierSpan.End();
 
         if (vendors.size() == 0) {
             std::cout << "Vendors found: None" << std::endl;
@@ -163,8 +163,14 @@ void runFoodFinder() {
         }
 
         for (std::string vendor : vendors) {
+            // Trace call to FoodVendor
+            opencensus::trace::Span vendorSpan = opencensus::trace::Span::StartSpan(
+                "FoodVendor", /* parent = */ nullptr, {&sampler});
+
             std::string ingredientInfo = vendorFinder.GetIngredientInfo(inputIngredient, vendor);
             std::cout << "- " << vendor << ": " << ingredientInfo << std::endl;
+
+            vendorSpan.End();
         }
     }
 }
