@@ -136,10 +136,12 @@ void runFoodFinder() {
 
     static opencensus::trace::AlwaysSampler sampler;
 
+    // ZIPKIN - Uncomment to use
+
     // Initialize and enable the Zipkin trace exporter.
-    const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
-    opencensus::exporters::trace::ZipkinExporter::Register(
-        opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
+    //const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
+    //opencensus::exporters::trace::ZipkinExporter::Register(
+        //opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
 
     while (true) {
         std::cout << std::endl << "Please input the ingredient you would like to find: ";
