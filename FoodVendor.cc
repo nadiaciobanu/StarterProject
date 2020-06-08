@@ -37,13 +37,25 @@ using food::FoodService;
 using food::VendorRequest;
 using food::VendorReply;
 
-std::map<std::string, std::map<std::string, float>> inventories;
-std::map<std::string, std::map<std::string, float>> prices;
+
+std::map<std::string, std::map<std::string, float>> inventories = \
+    {
+        {"Costco", {{"eggs", 10}, {"milk", 45}, {"sugar", 24}}},
+        {"Safeway", {{"milk", 65}, {"sugar", 20}, {"flour", 58}}},
+        {"Superstore", {{"flour", 4}, {"sugar", 18}}}
+    };
+
+std::map<std::string, std::map<std::string, float>> prices = \
+    {
+        {"Costco", {{"eggs", 1.00}, {"milk", 2.57}, {"sugar", 4.00}}},
+        {"Safeway", {{"milk", 3.50}, {"sugar", 3.00}, {"flour", 5.45}}},
+        {"Superstore", {{"flour", 2.00}, {"sugar", 3.35}}}
+    };
 
 
-// Logic and data behind the server's behavior.
 class FoodVendorService final : public FoodService::Service {
 
+    // Called by FoodFinder
     Status GetIngredientInfo(ServerContext* context, const VendorRequest* request,
                              VendorReply* reply) override {
         std::string vendor = request->vendorname();
@@ -60,42 +72,21 @@ class FoodVendorService final : public FoodService::Service {
 
 
 void runFoodVendor() {
-    std::string address = "0.0.0.0";
-    std::string port = "50061";
-    std::string server_address = address + ":" + port;
+    std::string server_address = "0.0.0.0:50061";
     FoodVendorService service;
 
     ServerBuilder builder;
-    // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    // Register "service" as the instance through which we'll communicate with
-    // clients. In this case it corresponds to an *synchronous* service.
     builder.RegisterService(&service);
-    // Finally assemble the server.
+
     std::unique_ptr<Server> server(builder.BuildAndStart());
     std::cout << "Server listening on " << server_address << std::endl;
 
-    // Wait for the server to shutdown. Note that some other thread must be
-    // responsible for shutting down the server for this call to ever return.
     server->Wait();
 }
 
 
-void initInventories() {
-    inventories["Costco"] = {{"eggs", 10}, {"milk", 45}, {"sugar", 24}};
-    inventories["Safeway"] = {{"milk", 65}, {"sugar", 20}, {"flour", 58}};
-    inventories["Superstore"] = {{"flour", 4}, {"sugar", 18}};
-}
-
-void initPrices() {
-    prices["Costco"] = {{"eggs", 1.00}, {"milk", 2.75}, {"sugar", 4.00}};
-    prices["Safeway"] = {{"milk", 3.50}, {"sugar", 3.00}, {"flour", 5.45}};
-    prices["Superstore"] = {{"flour", 2.00}, {"sugar", 3.35}};
-}
-
 int main(int argc, char** argv) {
-    initInventories();
-    initPrices();
     runFoodVendor();
 
     return 0;

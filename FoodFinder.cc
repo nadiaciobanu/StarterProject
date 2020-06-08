@@ -48,24 +48,16 @@ class FoodFinder {
     FoodFinder(std::shared_ptr<Channel> channel)
             : stub_(FoodService::NewStub(channel)) {}
 
-    // Assembles the client's payload, sends it and presents the response back
-    // from the server.
+    // Call to FoodSupplier
     std::vector<std::string> GetVendors(const std::string& ingredient) {
-        // Data we are sending to the server.
         SupplierRequest request;
         request.set_ingredient(ingredient);
 
-        // Container for the data we expect from the server.
         SupplierReply reply;
-
-        // Context for the client. It could be used to convey extra information to
-        // the server and/or tweak certain RPC behaviors.
         ClientContext context;
 
-        // The actual RPC.
         Status status = stub_->GetVendors(&context, request, &reply);
 
-        // Act upon its status.
         if (status.ok()) {
             std::vector<std::string> vendors = {};
 
@@ -83,23 +75,17 @@ class FoodFinder {
         }
     }
 
+    // Call to FoodVendor
     std::string GetIngredientInfo(const std::string& ingredient, const std::string& vendorName) {
-        // Data we are sending to the server.
         VendorRequest request;
         request.set_ingredient(ingredient);
         request.set_vendorname(vendorName);
 
-        // Container for the data we expect from the server.
         VendorReply reply;
-
-        // Context for the client. It could be used to convey extra information to
-        // the server and/or tweak certain RPC behaviors.
         ClientContext context;
 
-        // The actual RPC.
         Status status = stub_->GetIngredientInfo(&context, request, &reply);
 
-        // Act upon its status.
         if (status.ok()) {
             return formatIngredientInfo(reply.inventorycount(), reply.price());
         }
@@ -136,12 +122,10 @@ void runFoodFinder() {
 
     static opencensus::trace::AlwaysSampler sampler;
 
-    // ZIPKIN - Uncomment to use
-
     // Initialize and enable the Zipkin trace exporter.
-    //const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
-    //opencensus::exporters::trace::ZipkinExporter::Register(
-        //opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
+    const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
+    opencensus::exporters::trace::ZipkinExporter::Register(
+        opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
 
     while (true) {
         std::cout << std::endl << "Please input the ingredient you would like to find: ";
