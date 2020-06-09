@@ -20,6 +20,10 @@
 #include <memory>
 #include <string>
 #include <map>
+#include <chrono>
+#include <thread>
+#include <ctime>
+#include <cstdlib>
 
 #include <grpcpp/grpcpp.h>
 
@@ -45,9 +49,19 @@ const std::map<std::string, std::vector<std::string>> vendorMap = \
 
 class FoodSupplierService final : public InternalFoodService::Service {
 
+    void CreateRandomDelay() {
+        srand(time(0));
+        int delay = rand() % 100;
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+    }
+
     // Called by FoodFinder
     Status GetVendors(ServerContext* context, const SupplierRequest* request,
                       SupplierReply* reply) override {
+        // Random delay
+        CreateRandomDelay();
+
         const std::string ingredient = request->ingredient();
 
         if (vendorMap.find(ingredient) != vendorMap.end()) {
