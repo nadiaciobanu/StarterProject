@@ -33,16 +33,24 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using food::FoodService;
+using grpc::Server;
+using grpc::ServerBuilder;
+using grpc::ServerContext;
+
+using food::InternalFoodService;
+using food::ExternalFoodService;
 using food::SupplierRequest;
 using food::SupplierReply;
 using food::VendorRequest;
 using food::VendorReply;
+using food::FinderRequest;
+using food::FinderReply;
+
 
 class FoodFinder {
  public:
     FoodFinder(std::shared_ptr<Channel> channel)
-            : stub_(FoodService::NewStub(channel)) {}
+            : stub_(InternalFoodService::NewStub(channel)) {}
 
     // Call to FoodSupplier
     std::vector<std::string> GetVendors(const std::string& ingredient) {
@@ -90,7 +98,7 @@ class FoodFinder {
 
 
  private:
-    std::unique_ptr<FoodService::Stub> stub_;
+    std::unique_ptr<InternalFoodService::Stub> stub_;
 
     std::string formatIngredientInfo(int invCount, float price) {
         std::ostringstream oss;
@@ -100,57 +108,66 @@ class FoodFinder {
 };
 
 
-void runFoodFinder() {
-    std::cout << std::endl << "Welcome to FoodFinder!" << std::endl;
+class FoodFinderService final : public ExternalFoodService::Service {
 
-    const std::string supplier_address = "localhost:50051";
-    const std::string vendor_address = "localhost:50061";
+    Status GetVendorsInfo(ServerContext* context, const FinderRequest* request,
+                      FinderReply* reply) override {
+        const std::string ingredient = request->ingredient();
+        const std::string supplier_address = "localhost:50051";
+        const std::string vendor_address = "localhost:50061";
 
-    FoodFinder supplierFinder(grpc::CreateChannel(
-            supplier_address, grpc::InsecureChannelCredentials()));
+        FoodFinder supplierFinder(grpc::CreateChannel(
+                supplier_address, grpc::InsecureChannelCredentials()));
 
-    FoodFinder vendorFinder(grpc::CreateChannel(
-            vendor_address, grpc::InsecureChannelCredentials()));
+        FoodFinder vendorFinder(grpc::CreateChannel(
+                vendor_address, grpc::InsecureChannelCredentials()));
 
-    static opencensus::trace::AlwaysSampler sampler;
+        static opencensus::trace::AlwaysSampler sampler;
 
-    // Initialize and enable the Zipkin trace exporter.
-    const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
-    opencensus::exporters::trace::ZipkinExporter::Register(
-        opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
+        // Initialize and enable the Zipkin trace exporter.
+        const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
+        opencensus::exporters::trace::ZipkinExporter::Register(
+            opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
 
-    while (true) {
-        std::cout << std::endl << "Please input the ingredient you would like to find: ";
-
-        std::string inputIngredient;
-        std::cin >> inputIngredient;
-
-        std::cout << "Searching for vendors for " << inputIngredient << "..." <<std::endl;
-
-        // Trace call to FoodSupplier
         opencensus::trace::Span supplierSpan = opencensus::trace::Span::StartSpan(
             "FoodSupplier", /* parent = */ nullptr, {&sampler});
 
-        std::vector<std::string> vendors = supplierFinder.GetVendors(inputIngredient);
+        std::vector<std::string> vendors = supplierFinder.GetVendors(ingredient);
 
         supplierSpan.End();
 
         if (vendors.size() == 0) {
-            std::cout << "Vendors found: None" << std::endl;
-            continue;
+            reply->add_vendorsinfo("None");
+            return Status::OK;
         }
 
         for (const std::string& vendor : vendors) {
-            // Trace call to FoodVendor
             opencensus::trace::Span vendorSpan = opencensus::trace::Span::StartSpan(
                 "FoodVendor", /* parent = */ nullptr, {&sampler});
 
-            std::string ingredientInfo = vendorFinder.GetIngredientInfo(inputIngredient, vendor);
-            std::cout << "- " << vendor << ": " << ingredientInfo << std::endl;
+            std::string ingredientInfo = vendorFinder.GetIngredientInfo(ingredient, vendor);
+            std::ostringstream oss;
+            oss << vendor << ": " << ingredientInfo;
 
-            vendorSpan.End();
+            reply->add_vendorsinfo(oss.str());
         }
+        return Status::OK;
     }
+};
+
+
+void runFoodFinder() {
+    const std::string server_address = "0.0.0.0:50071";
+    FoodFinderService service;
+
+    ServerBuilder builder;
+
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    builder.RegisterService(&service);
+    std::unique_ptr<Server> server(builder.BuildAndStart());
+    std::cout << "Server listening on " << server_address << std::endl;
+
+    server->Wait();
 }
 
 

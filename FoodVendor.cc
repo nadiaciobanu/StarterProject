@@ -29,7 +29,7 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using food::FoodService;
+using food::InternalFoodService;
 using food::VendorRequest;
 using food::VendorReply;
 
@@ -49,7 +49,7 @@ const std::map<std::string, std::map<std::string, float>> prices = \
     };
 
 
-class FoodVendorService final : public FoodService::Service {
+class FoodVendorService final : public InternalFoodService::Service {
 
     // Called by FoodFinder
     Status GetIngredientInfo(ServerContext* context, const VendorRequest* request,
