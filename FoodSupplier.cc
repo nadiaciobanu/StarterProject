@@ -23,11 +23,7 @@
 
 #include <grpcpp/grpcpp.h>
 
-#ifdef BAZEL_BUILD
 #include "food.grpc.pb.h"
-#else
-#include "food.grpc.pb.h"
-#endif
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -38,7 +34,7 @@ using food::SupplierRequest;
 using food::SupplierReply;
 
 
-std::map<std::string, std::vector<std::string>> vendorMap = \
+const std::map<std::string, std::vector<std::string>> vendorMap = \
     {
         {"eggs", {"Costco"}},
         {"milk", {"Costco", "Safeway"}},
@@ -52,12 +48,12 @@ class FoodSupplierService final : public FoodService::Service {
     // Called by FoodFinder
     Status GetVendors(ServerContext* context, const SupplierRequest* request,
                       SupplierReply* reply) override {
-        std::string ingredient = request->ingredient();
-        std::vector<std::string> vendors;
-    
+        const std::string ingredient = request->ingredient();
+
         if (vendorMap.find(ingredient) != vendorMap.end()) {
-            vendors = vendorMap[ingredient];
-            for (std::string vendor : vendors) {
+            const std::vector<std::string> vendors = vendorMap.at(ingredient);
+
+            for (const std::string& vendor : vendors) {
                 reply->add_vendors(vendor);
             }
         }

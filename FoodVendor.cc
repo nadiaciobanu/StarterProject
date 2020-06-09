@@ -23,11 +23,7 @@
 
 #include <grpcpp/grpcpp.h>
 
-#ifdef BAZEL_BUILD
 #include "food.grpc.pb.h"
-#else
-#include "food.grpc.pb.h"
-#endif
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -38,14 +34,14 @@ using food::VendorRequest;
 using food::VendorReply;
 
 
-std::map<std::string, std::map<std::string, float>> inventories = \
+const std::map<std::string, std::map<std::string, float>> inventories = \
     {
         {"Costco", {{"eggs", 10}, {"milk", 45}, {"sugar", 24}}},
         {"Safeway", {{"milk", 65}, {"sugar", 20}, {"flour", 58}}},
         {"Superstore", {{"flour", 4}, {"sugar", 18}}}
     };
 
-std::map<std::string, std::map<std::string, float>> prices = \
+const std::map<std::string, std::map<std::string, float>> prices = \
     {
         {"Costco", {{"eggs", 1.00}, {"milk", 2.57}, {"sugar", 4.00}}},
         {"Safeway", {{"milk", 3.50}, {"sugar", 3.00}, {"flour", 5.45}}},
@@ -58,21 +54,24 @@ class FoodVendorService final : public FoodService::Service {
     // Called by FoodFinder
     Status GetIngredientInfo(ServerContext* context, const VendorRequest* request,
                              VendorReply* reply) override {
-        std::string vendor = request->vendorname();
-        std::string ingredient = request->ingredient();
+        const std::string vendor = request->vendorname();
+        const std::string ingredient = request->ingredient();
 
-        int inventory = inventories[vendor][ingredient];
-        float price = prices[vendor][ingredient];
+        const std::map<std::string, float> vendorInventory = inventories.at(vendor);
+        const std::map<std::string, float> vendorPrices = prices.at(vendor);
 
-        reply->set_inventorycount(inventory);
-        reply->set_price(price);
+        const int ingredientInventory = vendorInventory.at(ingredient);
+        const float ingredientPrice = vendorPrices.at(ingredient);
+
+        reply->set_inventorycount(ingredientInventory);
+        reply->set_price(ingredientPrice);
         return Status::OK;
     }
 };
 
 
 void runFoodVendor() {
-    std::string server_address = "0.0.0.0:50061";
+    const std::string server_address = "0.0.0.0:50061";
     FoodVendorService service;
 
     ServerBuilder builder;

@@ -23,11 +23,7 @@
 
 #include <grpcpp/grpcpp.h>
 
-#ifdef BAZEL_BUILD
 #include "food.grpc.pb.h"
-#else
-#include "food.grpc.pb.h"
-#endif
 
 #include "absl/strings/string_view.h"
 #include "opencensus/exporters/trace/zipkin/zipkin_exporter.h"
@@ -58,21 +54,18 @@ class FoodFinder {
 
         Status status = stub_->GetVendors(&context, request, &reply);
 
-        if (status.ok()) {
-            std::vector<std::string> vendors = {};
-
-            if (reply.vendors_size() > 0) {
-                for (std::string vendor : reply.vendors()) {
-                    vendors.push_back(vendor);
-                }
-            }
-            return vendors;
-        }
-        else {
+        if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
             return {};
         }
+
+        std::vector<std::string> vendors = {};
+
+        for (const std::string& vendor : reply.vendors()) {
+            vendors.push_back(vendor);
+        }
+        return vendors;   
     }
 
     // Call to FoodVendor
@@ -86,14 +79,13 @@ class FoodFinder {
 
         Status status = stub_->GetIngredientInfo(&context, request, &reply);
 
-        if (status.ok()) {
-            return formatIngredientInfo(reply.inventorycount(), reply.price());
-        }
-        else {
+        if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
             return "Information not found";
         }
+
+        return formatIngredientInfo(reply.inventorycount(), reply.price());
     }
 
 
@@ -111,8 +103,8 @@ class FoodFinder {
 void runFoodFinder() {
     std::cout << std::endl << "Welcome to FoodFinder!" << std::endl;
 
-    std::string supplier_address = "localhost:50051";
-    std::string vendor_address = "localhost:50061";
+    const std::string supplier_address = "localhost:50051";
+    const std::string vendor_address = "localhost:50061";
 
     FoodFinder supplierFinder(grpc::CreateChannel(
             supplier_address, grpc::InsecureChannelCredentials()));
@@ -148,7 +140,7 @@ void runFoodFinder() {
             continue;
         }
 
-        for (std::string vendor : vendors) {
+        for (const std::string& vendor : vendors) {
             // Trace call to FoodVendor
             opencensus::trace::Span vendorSpan = opencensus::trace::Span::StartSpan(
                 "FoodVendor", /* parent = */ nullptr, {&sampler});
