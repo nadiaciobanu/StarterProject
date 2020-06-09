@@ -27,48 +27,46 @@ class FoodClient {
 
         Status status = stub_->GetVendorsInfo(&context, request, &reply);
 
-        if (status.ok()) {
-            std::vector<std::string> vendorsInfo = {};
-
-            if (reply.vendorsinfo_size() > 0) {
-                for (std::string vendor : reply.vendorsinfo()) {
-                    vendorsInfo.push_back(vendor);
-                }
-            }
-            return vendorsInfo;
-        }
-        else {
+        if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
             return {};
         }
+
+        std::vector<std::string> vendors_info = {};
+
+        for (const std::string& vendor : reply.vendorsinfo()) {
+            vendors_info.push_back(vendor);
+        }
+
+        return vendors_info;
     } 
 
  private:
     std::unique_ptr<ExternalFoodService::Stub> stub_;
 };
 
-int main(int argc, char** argv) {
 
+int main(int argc, char** argv) {
     std::cout << std::endl << "Welcome to FoodFinder!" << std::endl;
 
     while (true) {
         std::cout << std::endl << "Please input the ingredient you would like to find: ";
 
-        std::string inputIngredient;
-        std::cin >> inputIngredient;
+        std::string input_ingredient;
+        std::cin >> input_ingredient;
 
-        std::cout << "Searching for vendors for " << inputIngredient << "..." <<std::endl;
+        std::cout << "Searching for vendors for " << input_ingredient << "..." <<std::endl;
 
         std::string finder_address = "localhost:50071";
 
-        FoodClient finderClient(grpc::CreateChannel(
+        FoodClient finder_client(grpc::CreateChannel(
                 finder_address, grpc::InsecureChannelCredentials()));
 
-        std::vector<std::string> vendorsWithInfo = finderClient.GetVendorsInfo(inputIngredient);
+        std::vector<std::string> vendors_with_info = finder_client.GetVendorsInfo(input_ingredient);
 
-        for (std::string vendorInfo : vendorsWithInfo) {
-            std::cout << "- " << vendorInfo << std::endl;
+        for (std::string vendor_info : vendors_with_info) {
+            std::cout << "- " << vendor_info << std::endl;
         }
     }
     return 0;
