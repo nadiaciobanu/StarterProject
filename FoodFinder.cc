@@ -142,14 +142,17 @@ class FoodFinderService final : public ExternalFoodService::Service {
         }
 
         for (const std::string& vendor : vendors) {
+            const std::string spanName = "FoodVendor for " + vendor;
             opencensus::trace::Span vendorSpan = opencensus::trace::Span::StartSpan(
-                "FoodVendor", /* parent = */ nullptr, {&sampler});
+                spanName, /* parent = */ nullptr, {&sampler});
 
             std::string ingredientInfo = vendorFinder.GetIngredientInfo(ingredient, vendor);
             std::ostringstream oss;
             oss << vendor << ": " << ingredientInfo;
 
             reply->add_vendorsinfo(oss.str());
+
+            vendorSpan.End();
         }
         return Status::OK;
     }
