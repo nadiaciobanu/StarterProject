@@ -111,6 +111,7 @@ class FoodFinder {
 class FoodFinderService final : public ExternalFoodService::Service {
     const std::string supplier_address = "localhost:50051";
     const std::string vendor_address = "localhost:50061";
+    const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
 
     Status GetVendorsInfo(ServerContext* context, const FinderRequest* request,
                       FinderReply* reply) override {
@@ -124,15 +125,16 @@ class FoodFinderService final : public ExternalFoodService::Service {
 
         static opencensus::trace::AlwaysSampler sampler;
 
-        // Initialize and enable the Zipkin trace exporter.
-        const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
+        // Enable the Zipkin trace exporter
         opencensus::exporters::trace::ZipkinExporter::Register(
             opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
 
+        // Begin FoodFinder span
         opencensus::trace::Span finderSpan = opencensus::trace::Span::StartSpan(
             "FoodFinder", /* parent = */ nullptr, {&sampler});
         finderSpan.AddAnnotation("Requested ingredient: " + ingredient);
 
+        // Begin FoodSupplier span
         opencensus::trace::Span supplierSpan = opencensus::trace::Span::StartSpan(
             "FoodSupplier", &finderSpan, {&sampler});
 
@@ -145,9 +147,11 @@ class FoodFinderService final : public ExternalFoodService::Service {
 
         if (vendors.size() == 0) {
             reply->add_vendorsinfo("None");
+            finderSpan.End();
             return Status::OK;
         }
 
+        // Begin FoodVendor span
         opencensus::trace::Span vendorSpan = opencensus::trace::Span::StartSpan(
                 "FoodVendor", &finderSpan, {&sampler});
 
