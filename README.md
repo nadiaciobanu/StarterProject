@@ -4,13 +4,12 @@ The FoodFinder API can be called with baking ingredients and will return vendors
 
 FoodFinder makes underlying calls to the FoodSupplier API to find out which vendors sell the ingredient, then to the FoodVendor API to find out the inventory and price of the ingredient for each vendor.
 
-## Building
-To build:
+## Build
 ```
 bazel build :all
 ```
 
-## Running
+## Run
 Run services in seperate terminal windows:
 ```
 ./bazel-bin/food_supplier
