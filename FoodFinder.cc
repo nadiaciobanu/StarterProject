@@ -80,7 +80,7 @@ class FoodFinder {
     std::string GetIngredientInfo(const std::string& ingredient, const std::string& vendorName) {
         VendorRequest request;
         request.set_ingredient(ingredient);
-        request.set_vendorname(vendorName);
+        request.set_vendor_name(vendorName);
 
         VendorReply reply;
         ClientContext context;
@@ -93,16 +93,15 @@ class FoodFinder {
             return "Information not found";
         }
 
-        return formatIngredientInfo(reply.inventorycount(), reply.price());
+        return FormatIngredientInfo(reply.inventory_count(), reply.price());
     }
-
 
  private:
     std::unique_ptr<InternalFoodService::Stub> stub_;
 
-    std::string formatIngredientInfo(int invCount, float price) {
+    std::string FormatIngredientInfo(int inventory_count, float price) {
         std::ostringstream oss;
-        oss << invCount << " available @ $" << price;
+        oss << inventory_count << " available @ $" << price;
         return oss.str();
     }
 };
@@ -117,10 +116,10 @@ class FoodFinderService final : public ExternalFoodService::Service {
                       FinderReply* reply) override {
         const std::string ingredient = request->ingredient();
         
-        FoodFinder supplierFinder(grpc::CreateChannel(
+        FoodFinder supplier_finder(grpc::CreateChannel(
                 supplier_address, grpc::InsecureChannelCredentials()));
 
-        FoodFinder vendorFinder(grpc::CreateChannel(
+        FoodFinder vendor_finder(grpc::CreateChannel(
                 vendor_address, grpc::InsecureChannelCredentials()));
 
         static opencensus::trace::AlwaysSampler sampler;
@@ -130,53 +129,53 @@ class FoodFinderService final : public ExternalFoodService::Service {
             opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
 
         // Begin FoodFinder span
-        opencensus::trace::Span finderSpan = opencensus::trace::Span::StartSpan(
+        opencensus::trace::Span finder_span = opencensus::trace::Span::StartSpan(
             "FoodFinder", /* parent = */ nullptr, {&sampler});
-        finderSpan.AddAnnotation("Requested ingredient: " + ingredient);
+        finder_span.AddAnnotation("Requested ingredient: " + ingredient);
 
         // Begin FoodSupplier span
-        opencensus::trace::Span supplierSpan = opencensus::trace::Span::StartSpan(
-            "FoodSupplier", &finderSpan, {&sampler});
+        opencensus::trace::Span supplier_span = opencensus::trace::Span::StartSpan(
+            "FoodSupplier", &finder_span, {&sampler});
 
-        std::vector<std::string> vendors = supplierFinder.GetVendors(ingredient);
+        std::vector<std::string> vendors = supplier_finder.GetVendors(ingredient);
 
-        int numVendors = vendors.size();
-        supplierSpan.AddAnnotation(std::to_string(numVendors) + " vendors found");
+        int num_vendors = vendors.size();
+        supplier_span.AddAnnotation(std::to_string(num_vendors) + " vendors found");
 
-        supplierSpan.End();
+        supplier_span.End();
 
         if (vendors.size() == 0) {
-            reply->add_vendorsinfo("None");
-            finderSpan.End();
+            reply->add_vendors_info("None");
+            finder_span.End();
             return Status::OK;
         }
 
         // Begin FoodVendor span
-        opencensus::trace::Span vendorSpan = opencensus::trace::Span::StartSpan(
-                "FoodVendor", &finderSpan, {&sampler});
+        opencensus::trace::Span vendor_span = opencensus::trace::Span::StartSpan(
+                "FoodVendor", &finder_span, {&sampler});
 
         for (const std::string& vendor : vendors) {
-            const std::string spanName = "FoodVendor - " + vendor;
-            opencensus::trace::Span currVendorSpan = opencensus::trace::Span::StartSpan(
-                spanName, &vendorSpan, {&sampler});
+            const std::string span_name = "FoodVendor - " + vendor;
+            opencensus::trace::Span curr_vendor_span = opencensus::trace::Span::StartSpan(
+                span_name, &vendor_span, {&sampler});
 
-            std::string ingredientInfo = vendorFinder.GetIngredientInfo(ingredient, vendor);
+            std::string ingredient_info = vendor_finder.GetIngredientInfo(ingredient, vendor);
             std::ostringstream oss;
-            oss << vendor << ": " << ingredientInfo;
+            oss << vendor << ": " << ingredient_info;
 
-            reply->add_vendorsinfo(oss.str());
+            reply->add_vendors_info(oss.str());
 
-            currVendorSpan.End();
+            curr_vendor_span.End();
         }
-        vendorSpan.End();
+        vendor_span.End();
 
-        finderSpan.End();
+        finder_span.End();
         return Status::OK;
     }
 };
 
 
-void runFoodFinder() {
+void RunFoodFinder() {
     const std::string server_address = "0.0.0.0:50071";
     FoodFinderService service;
 
@@ -192,7 +191,7 @@ void runFoodFinder() {
 
 
 int main(int argc, char** argv) {
-    runFoodFinder();
+    RunFoodFinder();
 
     return 0;
 }

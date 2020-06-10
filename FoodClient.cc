@@ -35,7 +35,7 @@ class FoodClient {
 
         std::vector<std::string> vendors_info = {};
 
-        for (const std::string& vendor : reply.vendorsinfo()) {
+        for (const std::string& vendor : reply.vendors_info()) {
             vendors_info.push_back(vendor);
         }
 
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
 
         std::cout << "Searching for vendors for " << input_ingredient << "..." <<std::endl;
 
-        std::string finder_address = "localhost:50071";
+        const std::string finder_address = "localhost:50071";
 
         FoodClient finder_client(grpc::CreateChannel(
                 finder_address, grpc::InsecureChannelCredentials()));

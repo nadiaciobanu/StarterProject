@@ -38,7 +38,7 @@ using food::SupplierRequest;
 using food::SupplierReply;
 
 
-const std::map<std::string, std::vector<std::string>> kVendorMap = \
+const std::map<std::string, std::vector<std::string>> vendor_map = \
     {
         {"eggs", {"Costco"}},
         {"milk", {"Costco", "Safeway"}},
@@ -64,8 +64,8 @@ class FoodSupplierService final : public InternalFoodService::Service {
 
         const std::string ingredient = request->ingredient();
 
-        if (kVendorMap.find(ingredient) != kVendorMap.end()) {
-            std::vector<std::string> vendors = kVendorMap.at(ingredient);
+        if (vendor_map.find(ingredient) != vendor_map.end()) {
+            std::vector<std::string> vendors = vendor_map.at(ingredient);
 
             for (const std::string& vendor : vendors) {
                 reply->add_vendors(vendor);
@@ -76,8 +76,8 @@ class FoodSupplierService final : public InternalFoodService::Service {
 };
 
 
-void runFoodSupplier() {
-    std::string server_address = "0.0.0.0:50051";
+void RunFoodSupplier() {
+    const std::string server_address = "0.0.0.0:50051";
     FoodSupplierService service;
 
     ServerBuilder builder;
@@ -92,7 +92,7 @@ void runFoodSupplier() {
 
 
 int main(int argc, char** argv) {
-    runFoodSupplier();
+    RunFoodSupplier();
 
     return 0;
 }

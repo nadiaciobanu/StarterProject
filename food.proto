@@ -33,11 +33,11 @@ message SupplierReply {
 
 message VendorRequest {
     string ingredient = 1;
-    string vendorName = 2;
+    string vendor_name = 2;
 }
 
 message VendorReply {
-    int32 inventoryCount = 1;
+    int32 inventory_count = 1;
     float price = 2;
 }
 
@@ -46,5 +46,5 @@ message FinderRequest {
 }
 
 message FinderReply {
-    repeated string vendorsInfo = 1;
+    repeated string vendors_info = 1;
 }

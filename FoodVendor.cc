@@ -68,23 +68,23 @@ class FoodVendorService final : public InternalFoodService::Service {
         // Random delay
         CreateRandomDelay();
 
-        const std::string vendor = request->vendorname();
+        const std::string vendor = request->vendor_name();
         const std::string ingredient = request->ingredient();
 
-        const std::map<std::string, float> vendorInventory = inventories.at(vendor);
-        const std::map<std::string, float> vendorPrices = prices.at(vendor);
+        const std::map<std::string, float> vendor_inventory = inventories.at(vendor);
+        const std::map<std::string, float> vendor_prices = prices.at(vendor);
 
-        const int ingredientInventory = vendorInventory.at(ingredient);
-        const float ingredientPrice = vendorPrices.at(ingredient);
+        const int ingredient_inventory = vendor_inventory.at(ingredient);
+        const float ingredient_price = vendor_prices.at(ingredient);
 
-        reply->set_inventorycount(ingredientInventory);
-        reply->set_price(ingredientPrice);
+        reply->set_inventory_count(ingredient_inventory);
+        reply->set_price(ingredient_price);
         return Status::OK;
     }
 };
 
 
-void runFoodVendor() {
+void RunFoodVendor() {
     const std::string server_address = "0.0.0.0:50061";
     FoodVendorService service;
 
@@ -100,7 +100,7 @@ void runFoodVendor() {
 
 
 int main(int argc, char** argv) {
-    runFoodVendor();
+    RunFoodVendor();
 
     return 0;
 }
