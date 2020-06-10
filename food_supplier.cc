@@ -49,6 +49,7 @@ const std::map<std::string, std::vector<std::string>> vendor_map = \
 
 class FoodSupplierService final : public InternalFoodService::Service {
 
+    // Create delay between 0 and 99 milliseconds
     void CreateRandomDelay() {
         srand(time(0));
         int delay = rand() % 100;
@@ -56,11 +57,24 @@ class FoodSupplierService final : public InternalFoodService::Service {
         std::this_thread::sleep_for(std::chrono::milliseconds(delay));
     }
 
+    // Decide whether to throw an error (25% chance)
+    bool IsCreateRandomError() {
+        srand(time(0));
+        int random_number = rand() % 4;
+        if (random_number == 0) {
+            return true;
+        }
+        return false;
+    }
+
     // Called by FoodFinder
     Status GetVendors(ServerContext* context, const SupplierRequest* request,
                       SupplierReply* reply) override {
-        // Random delay
         CreateRandomDelay();
+
+        if (IsCreateRandomError()) {
+            return Status::CANCELLED;
+        }
 
         const std::string ingredient = request->ingredient();
 
@@ -77,7 +91,7 @@ class FoodSupplierService final : public InternalFoodService::Service {
 
 
 void RunFoodSupplier() {
-    const std::string server_address = "0.0.0.0:50051";
+    const std::string server_address = "localhost:50051";
     FoodSupplierService service;
 
     ServerBuilder builder;
