@@ -176,6 +176,11 @@ class FoodFinderService final : public ExternalFoodService::Service {
             std::ostringstream oss;
             oss << vendor << ": " << ingredient_info;
 
+            // If error occurred, annotate span
+            if (ingredient_info.compare(kGeneralErrorString) == 0) {
+                curr_vendor_span.AddAnnotation(kGeneralErrorString);
+            }
+
             reply->add_vendors_info(oss.str());
 
             curr_vendor_span.End();
