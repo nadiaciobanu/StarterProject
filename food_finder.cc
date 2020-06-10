@@ -46,6 +46,9 @@ using food::VendorReply;
 using food::FinderRequest;
 using food::FinderReply;
 
+const std::string kGeneralErrorString = "ERROR";
+const std::string kInfoNotFoundErrorString = "Information not found";
+
 
 class FoodFinder {
  public:
@@ -65,7 +68,7 @@ class FoodFinder {
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
-            return {"ERROR"};
+            return {kGeneralErrorString};
         }
 
         std::vector<std::string> vendors = {};
@@ -73,7 +76,7 @@ class FoodFinder {
         for (const std::string& vendor : reply.vendors()) {
             vendors.push_back(vendor);
         }
-        return vendors;   
+        return vendors;
     }
 
     // Call to FoodVendor
@@ -90,7 +93,7 @@ class FoodFinder {
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
-            return "Error: Information not found";
+            return kInfoNotFoundErrorString;
         }
 
         return FormatIngredientInfo(reply.inventory_count(), reply.price());
@@ -151,8 +154,8 @@ class FoodFinderService final : public ExternalFoodService::Service {
             return Status::OK;
         }
         // FoodSupplier returned an error
-        else if ((vendors.at(0)).compare("ERROR") == 0) {
-            supplier_span.AddAnnotation("ERROR");
+        else if ((vendors.at(0)).compare(kGeneralErrorString) == 0) {
+            supplier_span.AddAnnotation(kGeneralErrorString);
             supplier_span.End();
             finder_span.End();
             return Status::CANCELLED;

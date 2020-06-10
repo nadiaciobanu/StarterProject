@@ -55,6 +55,7 @@ const std::map<std::string, std::map<std::string, float>> prices = \
 
 class FoodVendorService final : public InternalFoodService::Service {
 
+    // Create delay between 0 and 99 milliseconds
     void CreateRandomDelay() {
         srand(time(0));
         int delay = rand() % 100;
@@ -65,7 +66,6 @@ class FoodVendorService final : public InternalFoodService::Service {
     // Called by FoodFinder
     Status GetIngredientInfo(ServerContext* context, const VendorRequest* request,
                              VendorReply* reply) override {
-        // Random delay
         CreateRandomDelay();
 
         const std::string vendor = request->vendor_name();
