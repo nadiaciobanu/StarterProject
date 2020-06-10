@@ -125,8 +125,9 @@ class FoodFinderService final : public ExternalFoodService::Service {
         static opencensus::trace::AlwaysSampler sampler;
 
         // Enable the Zipkin trace exporter
-        opencensus::exporters::trace::ZipkinExporter::Register(
-            opencensus::exporters::trace::ZipkinExporterOptions(endpoint));
+        opencensus::exporters::trace::ZipkinExporterOptions options = opencensus::exporters::trace::ZipkinExporterOptions(endpoint);
+        options.service_name = "FoodService";
+        opencensus::exporters::trace::ZipkinExporter::Register(options);
 
         // Begin FoodFinder span
         opencensus::trace::Span finder_span = opencensus::trace::Span::StartSpan(
