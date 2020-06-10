@@ -63,10 +63,24 @@ class FoodVendorService final : public InternalFoodService::Service {
         std::this_thread::sleep_for(std::chrono::milliseconds(delay));
     }
 
+    // Decide whether to throw an error (33% chance)
+    bool IsCreateRandomError() {
+        srand(time(0));
+        int random_number = rand() % 3;
+        if (random_number == 0) {
+            return true;
+        }
+        return false;
+    }
+
     // Called by FoodFinder
     Status GetIngredientInfo(ServerContext* context, const VendorRequest* request,
                              VendorReply* reply) override {
         CreateRandomDelay();
+
+        if (IsCreateRandomError()) {
+            return Status::CANCELLED;
+        }
 
         const std::string vendor = request->vendor_name();
         const std::string ingredient = request->ingredient();

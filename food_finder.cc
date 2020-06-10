@@ -47,7 +47,6 @@ using food::FinderRequest;
 using food::FinderReply;
 
 const std::string kGeneralErrorString = "ERROR";
-const std::string kInfoNotFoundErrorString = "Information not found";
 
 
 class FoodFinder {
@@ -93,7 +92,7 @@ class FoodFinder {
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
-            return kInfoNotFoundErrorString;
+            return kGeneralErrorString;
         }
 
         return FormatIngredientInfo(reply.inventory_count(), reply.price());
