@@ -6,18 +6,20 @@ FoodFinder makes underlying calls to the FoodSupplier API to find out which vend
 
 To build:
 ```
-bazel build :FoodSupplier
-bazel build :FoodFinder
-bazel build :FoodVendor
+bazel build :food_supplier
+bazel build :food_vendor
+bazel build :food_finder
+bazel build :food_client
 ```
 
 To run:
 ```
-./bazel-bin/FoodSupplier
-./bazel-bin/FoodVendor
-./bazel-bin/FoodFinder
+./bazel-bin/food_supplier
+./bazel-bin/food_vendor
+./bazel-bin/food_finder
+./bazel-bin/food_client
 ```
 
-Make sure `FoodSupplier` and `FoodVendor` are running before attempting to run `FoodFinder`.
+Make sure `FoodSupplier`, `FoodVendor` and `FoodFinder` are running before attempting to run `FoodFinder`.
 
 To view traces, install [Zipkin](https://zipkin.io/pages/quickstart) and visit http://localhost:9411/zipkin
