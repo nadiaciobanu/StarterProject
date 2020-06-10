@@ -85,7 +85,7 @@ class FoodVendorService final : public InternalFoodService::Service {
 
 
 void RunFoodVendor() {
-    const std::string server_address = "0.0.0.0:50061";
+    const std::string server_address = "localhost:50061";
     FoodVendorService service;
 
     ServerBuilder builder;

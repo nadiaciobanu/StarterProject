@@ -65,7 +65,7 @@ class FoodFinder {
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
-            return {};
+            return {"ERROR"};
         }
 
         std::vector<std::string> vendors = {};
@@ -90,7 +90,7 @@ class FoodFinder {
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
-            return "Information not found";
+            return "Error: Information not found";
         }
 
         return FormatIngredientInfo(reply.inventory_count(), reply.price());
@@ -140,15 +140,25 @@ class FoodFinderService final : public ExternalFoodService::Service {
         std::vector<std::string> vendors = supplier_finder.GetVendors(ingredient);
 
         int num_vendors = vendors.size();
-        supplier_span.AddAnnotation(std::to_string(num_vendors) + " vendors found");
 
-        supplier_span.End();
+        if (num_vendors == 0) {
+            supplier_span.AddAnnotation("No vendors found");
+            supplier_span.End();
 
-        if (vendors.size() == 0) {
             reply->add_vendors_info("None");
             finder_span.End();
             return Status::OK;
         }
+        // FoodSupplier returned an error
+        else if ((vendors.at(0)).compare("ERROR") == 0) {
+            supplier_span.AddAnnotation("ERROR");
+            supplier_span.End();
+            finder_span.End();
+            return Status::CANCELLED;
+        }
+
+        supplier_span.AddAnnotation(std::to_string(num_vendors) + " vendors found");
+        supplier_span.End();
 
         // Begin FoodVendor span
         opencensus::trace::Span vendor_span = opencensus::trace::Span::StartSpan(
@@ -176,7 +186,7 @@ class FoodFinderService final : public ExternalFoodService::Service {
 
 
 void RunFoodFinder() {
-    const std::string server_address = "0.0.0.0:50071";
+    const std::string server_address = "localhost:50071";
     FoodFinderService service;
 
     ServerBuilder builder;

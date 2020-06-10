@@ -56,11 +56,21 @@ class FoodSupplierService final : public InternalFoodService::Service {
         std::this_thread::sleep_for(std::chrono::milliseconds(delay));
     }
 
+    bool CreateRandomError() {
+        srand(time(0));
+        bool create_error = rand() % 2;
+        return create_error;
+    }
+
     // Called by FoodFinder
     Status GetVendors(ServerContext* context, const SupplierRequest* request,
                       SupplierReply* reply) override {
         // Random delay
         CreateRandomDelay();
+
+        if (CreateRandomError()) {
+            return Status::CANCELLED;
+        }
 
         const std::string ingredient = request->ingredient();
 
@@ -77,7 +87,7 @@ class FoodSupplierService final : public InternalFoodService::Service {
 
 
 void RunFoodSupplier() {
-    const std::string server_address = "0.0.0.0:50051";
+    const std::string server_address = "localhost:50051";
     FoodSupplierService service;
 
     ServerBuilder builder;

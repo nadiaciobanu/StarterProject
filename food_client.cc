@@ -12,13 +12,17 @@ using food::ExternalFoodService;
 using food::FinderRequest;
 using food::FinderReply;
 
+const std::string kGeneralErrorString = "ERROR";
+const std::string kUserWelcomeMessage = "Welcome to FoodFinder!";
+const std::string kUserInputPrompt = "Please input the ingredient you would like to find: ";
+
+
 class FoodClient {
  public:
     FoodClient(std::shared_ptr<Channel> channel)
             : stub_(ExternalFoodService::NewStub(channel)) {}
     
     std::vector<std::string> GetVendorsInfo(const std::string& ingredient) {
-        // Data we are sending to the server.
         FinderRequest request;
         request.set_ingredient(ingredient);
 
@@ -28,9 +32,9 @@ class FoodClient {
         Status status = stub_->GetVendorsInfo(&context, request, &reply);
 
         if (!status.ok()) {
-            std::cout << status.error_code() << ": " << status.error_message()
-                      << std::endl;
-            return {};
+            std::cout << kGeneralErrorString << std::endl;
+                      //<< status.error_code() << ": " << status.error_message();
+            return {kGeneralErrorString};
         }
 
         std::vector<std::string> vendors_info = {};
@@ -47,26 +51,38 @@ class FoodClient {
 };
 
 
+std::string GetUserInput() {
+    std::cout << std::endl << kUserInputPrompt;
+
+    std::string input_ingredient;
+    std::cin >> input_ingredient;
+
+    std::cout << "Searching for vendors for " << input_ingredient << "..." <<std::endl;
+    return input_ingredient;
+}
+
+
+void PrintResults(std::vector<std::string> vendors_with_info) {
+    for (const std::string& vendor_info : vendors_with_info) {
+        std::cout << "- " << vendor_info << std::endl;
+    }
+}
+
+
 int main(int argc, char** argv) {
-    std::cout << std::endl << "Welcome to FoodFinder!" << std::endl;
+    std::cout << std::endl << kUserWelcomeMessage << std::endl;
+    const std::string finder_address = "localhost:50071";
 
     while (true) {
-        std::cout << std::endl << "Please input the ingredient you would like to find: ";
-
-        std::string input_ingredient;
-        std::cin >> input_ingredient;
-
-        std::cout << "Searching for vendors for " << input_ingredient << "..." <<std::endl;
-
-        const std::string finder_address = "localhost:50071";
+        std::string input_ingredient = GetUserInput();
 
         FoodClient finder_client(grpc::CreateChannel(
                 finder_address, grpc::InsecureChannelCredentials()));
 
         std::vector<std::string> vendors_with_info = finder_client.GetVendorsInfo(input_ingredient);
 
-        for (std::string vendor_info : vendors_with_info) {
-            std::cout << "- " << vendor_info << std::endl;
+        if (!(vendors_with_info.at(0)).compare(kGeneralErrorString) == 0) {
+            PrintResults(vendors_with_info);
         }
     }
     return 0;
