@@ -47,6 +47,7 @@ using food::FinderRequest;
 using food::FinderReply;
 
 const std::string kGeneralErrorString = "ERROR";
+const int kServerTimeout = 85;
 
 
 class FoodFinder {
@@ -62,12 +63,18 @@ class FoodFinder {
         SupplierReply reply;
         ClientContext context;
 
+        // Set timeout for server
+        context.set_deadline(std::chrono::system_clock::now() +
+            std::chrono::milliseconds(kServerTimeout));
+
         Status status = stub_->GetVendors(&context, request, &reply);
 
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
-            return {kGeneralErrorString};
+
+            // Return error message for span annotations
+            return {kGeneralErrorString, status.error_message()};
         }
 
         std::vector<std::string> vendors = {};
@@ -86,6 +93,10 @@ class FoodFinder {
 
         VendorReply reply;
         ClientContext context;
+
+        // Set timeout for server
+        context.set_deadline(std::chrono::system_clock::now() +
+            std::chrono::milliseconds(kServerTimeout));
 
         Status status = stub_->GetIngredientInfo(&context, request, &reply);
 
@@ -154,7 +165,10 @@ class FoodFinderService final : public ExternalFoodService::Service {
         }
         // FoodSupplier returned an error
         else if ((vendors.at(0)).compare(kGeneralErrorString) == 0) {
-            supplier_span.AddAnnotation(kGeneralErrorString);
+            std::ostringstream oss;
+            oss << kGeneralErrorString << " " << vendors.at(1);
+            supplier_span.AddAnnotation(oss.str());
+
             supplier_span.End();
             finder_span.End();
             return Status::CANCELLED;
