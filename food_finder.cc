@@ -23,14 +23,17 @@
 #include <tuple>
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/opencensus.h>
 
 #include "food.grpc.pb.h"
 
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
 #include "opencensus/exporters/trace/zipkin/zipkin_exporter.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/span.h"
+#include "opencensus/stats/stats.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -52,6 +55,38 @@ using food::FinderReply;
 const std::string kGeneralErrorString = "ERROR";
 const int kServerTimeout = 85;
 
+// For metrics
+ABSL_CONST_INIT const absl::string_view kRPCErrorMeasureName = "rpc_error_count";
+ABSL_CONST_INIT const absl::string_view kRPCCountMeasureName = "rpc_count";
+ABSL_CONST_INIT const absl::string_view kRPCLatencyMeasureName = "rpc_latency";
+
+opencensus::stats::MeasureInt64 RPCErrorCountMeasure() {
+  static const auto measure =
+      opencensus::stats::MeasureInt64::Register(
+          kRPCErrorMeasureName, "Number of RPC errors encountered.", "By");
+  return measure;
+}
+
+opencensus::stats::MeasureInt64 RPCCountMeasure() {
+  static const auto measure =
+      opencensus::stats::MeasureInt64::Register(
+          kRPCCountMeasureName, "Number of RPC calls made.", "By");
+  return measure;
+}
+
+opencensus::stats::MeasureDouble RPCLatencyMeasure() {
+  static const auto measure =
+      opencensus::stats::MeasureDouble::Register(
+          kRPCLatencyMeasureName, "Latency of RPC calls made.", "ms");
+  return measure;
+}
+
+opencensus::tags::TagKey MethodKey() {
+  static const opencensus::tags::TagKey key =
+      opencensus::tags::TagKey::Register("method");
+  return key;
+}
+
 
 class FoodFinder {
  public:
@@ -70,17 +105,24 @@ class FoodFinder {
         context.set_deadline(std::chrono::system_clock::now() +
             std::chrono::milliseconds(kServerTimeout));
 
-        // Increment RPC count
-        opencensus::stats::Record({{rpc_count_measure, 1}}, {{status_key, !status.ok() ? "Error" : "OK"}});
+        absl::Time start = absl::Now();
 
         Status status = stub_->GetVendors(&context, request, &reply);
+
+        // Record latency
+        absl::Time end = absl::Now();
+        double latency = absl::ToDoubleMilliseconds(end - start);
+        opencensus::stats::Record({{RPCLatencyMeasure(), latency}});
+
+        // Record RPC call
+        opencensus::stats::Record({{RPCCountMeasure(), 1}});
 
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
 
             // Record error for metrics
-            opencensus::stats::Record({{rpc_errors_measure, 1}});
+            opencensus::stats::Record({{RPCErrorCountMeasure(), 1}});
 
             std::string custom_error_message = "FoodSupplier " + status.error_message();
             std::vector<std::string> error = {custom_error_message};
@@ -108,15 +150,25 @@ class FoodFinder {
         // Set timeout for server
         context.set_deadline(std::chrono::system_clock::now() +
             std::chrono::milliseconds(kServerTimeout));
+ 
+        absl::Time start = absl::Now();
 
         Status status = stub_->GetIngredientInfo(&context, request, &reply);
+
+        // Record latency
+        absl::Time end = absl::Now();
+        double latency = absl::ToDoubleMilliseconds(end - start);
+        opencensus::stats::Record({{RPCLatencyMeasure(), latency}});
+ 
+        // Record RPC call
+        opencensus::stats::Record({{RPCCountMeasure(), 1}});
 
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
 
             // Record error for metrics
-            opencensus::stats::Record({{rpc_errors_measure, 1}});
+            opencensus::stats::Record({{RPCErrorCountMeasure(), 1}});
 
             std::string custom_error_message = "FoodVendor " + status.error_message();
 
@@ -155,10 +207,8 @@ class FoodFinderService final : public ExternalFoodService::Service {
 
         static opencensus::trace::AlwaysSampler sampler;
 
-        // Register the OpenCensus gRPC plugin to enable stats and tracing in gRPC.
+        // For metrics
         grpc::RegisterOpenCensusPlugin();
-
-        // Register the gRPC views (latency, error count, etc).
         grpc::RegisterOpenCensusViewsForExport();
 
         RegisterExporters();
@@ -250,9 +300,6 @@ class FoodFinderService final : public ExternalFoodService::Service {
                         "not exporting to Stackdriver.\n";
         }
         else {
-            //std::cout << "RegisterStackdriverExporters:\n";
-            //std::cout << "  project_id = \"" << project_id << "\"\n";
-
             opencensus::exporters::stats::StackdriverOptions stats_opts;
             stats_opts.project_id = project_id;
             opencensus::exporters::stats::StackdriverExporter::Register(
@@ -262,9 +309,43 @@ class FoodFinderService final : public ExternalFoodService::Service {
 };
 
 
+void RegisterViews() {
+    RPCErrorCountMeasure();
+    opencensus::stats::ViewDescriptor()
+        .set_name("FoodService/RPCErrorCount")
+        .set_description("Number of RPC errors")
+        .set_measure(kRPCErrorMeasureName)
+        .set_aggregation(opencensus::stats::Aggregation::Count())
+        .add_column(MethodKey())
+        .RegisterForExport();
+
+    RPCCountMeasure();
+    opencensus::stats::ViewDescriptor()
+        .set_name("FoodService/RPCCount")
+        .set_description("Number of RPC calls")
+        .set_measure(kRPCCountMeasureName)
+        .set_aggregation(opencensus::stats::Aggregation::Count())
+        .add_column(MethodKey())
+        .RegisterForExport();
+
+    RPCLatencyMeasure();
+    opencensus::stats::ViewDescriptor()
+        .set_name("FoodService/RPCLatency")
+        .set_description("Numer of RPC calls")
+        .set_measure(kRPCCountMeasureName)
+        .set_aggregation(opencensus::stats::Aggregation::Distribution(
+          opencensus::stats::BucketBoundaries::Explicit(
+              {0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100})))
+        .add_column(MethodKey())
+        .RegisterForExport();
+}
+
+
 void RunFoodFinder() {
     const std::string server_address = "localhost:50071";
     FoodFinderService service;
+
+    RegisterViews();
 
     ServerBuilder builder;
 
