@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 #include <sstream>
+#include <tuple>
 
 #include <grpcpp/grpcpp.h>
 
@@ -33,6 +34,7 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
+using grpc::StatusCode;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -56,7 +58,7 @@ class FoodFinder {
             : stub_(InternalFoodService::NewStub(channel)) {}
 
     // Call to FoodSupplier
-    std::vector<std::string> GetVendors(const std::string& ingredient) {
+    std::tuple<bool, std::vector<std::string>> GetVendors(const std::string& ingredient) {
         SupplierRequest request;
         request.set_ingredient(ingredient);
 
@@ -72,9 +74,10 @@ class FoodFinder {
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
+            std::string custom_error_message = "FoodSupplier " + status.error_message();
+            std::vector<std::string> error = {custom_error_message};
 
-            // Return error message for span annotations
-            return {kGeneralErrorString, status.error_message()};
+            return std::make_tuple(false, error);
         }
 
         std::vector<std::string> vendors = {};
@@ -82,11 +85,11 @@ class FoodFinder {
         for (const std::string& vendor : reply.vendors()) {
             vendors.push_back(vendor);
         }
-        return vendors;
+        return std::make_tuple(true, vendors);
     }
 
     // Call to FoodVendor
-    std::string GetIngredientInfo(const std::string& ingredient, const std::string& vendorName) {
+    std::tuple<bool, std::string> GetIngredientInfo(const std::string& ingredient, const std::string& vendorName) {
         VendorRequest request;
         request.set_ingredient(ingredient);
         request.set_vendor_name(vendorName);
@@ -103,10 +106,13 @@ class FoodFinder {
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
-            return kGeneralErrorString;
+            std::string custom_error_message = "FoodVendor " + status.error_message();
+
+            return std::make_tuple(false, custom_error_message);
         }
 
-        return FormatIngredientInfo(reply.inventory_count(), reply.price());
+        std::string ingredient_info = FormatIngredientInfo(reply.inventory_count(), reply.price());
+        return std::make_tuple(true, ingredient_info);
     }
 
  private:
@@ -151,7 +157,20 @@ class FoodFinderService final : public ExternalFoodService::Service {
         opencensus::trace::Span supplier_span = opencensus::trace::Span::StartSpan(
             "FoodSupplier", &finder_span, {&sampler});
 
-        std::vector<std::string> vendors = supplier_finder.GetVendors(ingredient);
+        std::tuple<bool, std::vector<std::string>> supplier_return = supplier_finder.GetVendors(ingredient);
+        bool success = std::get<0>(supplier_return);
+
+        // FoodSupplier returned an error
+        if (!success) {
+            std::string error_message = std::get<1>(supplier_return).at(0);
+            supplier_span.AddAnnotation("ERROR: " + error_message);
+
+            supplier_span.End();
+            finder_span.End();
+            return Status(StatusCode::ABORTED, error_message);
+        }
+
+        std::vector<std::string> vendors = std::get<1>(supplier_return);
 
         int num_vendors = vendors.size();
 
@@ -162,16 +181,6 @@ class FoodFinderService final : public ExternalFoodService::Service {
             reply->add_vendors_info("None");
             finder_span.End();
             return Status::OK;
-        }
-        // FoodSupplier returned an error
-        else if ((vendors.at(0)).compare(kGeneralErrorString) == 0) {
-            std::ostringstream oss;
-            oss << kGeneralErrorString << " " << vendors.at(1);
-            supplier_span.AddAnnotation(oss.str());
-
-            supplier_span.End();
-            finder_span.End();
-            return Status::CANCELLED;
         }
 
         supplier_span.AddAnnotation(std::to_string(num_vendors) + " vendors found");
@@ -186,15 +195,22 @@ class FoodFinderService final : public ExternalFoodService::Service {
             opencensus::trace::Span curr_vendor_span = opencensus::trace::Span::StartSpan(
                 span_name, &vendor_span, {&sampler});
 
-            std::string ingredient_info = vendor_finder.GetIngredientInfo(ingredient, vendor);
-            std::ostringstream oss;
-            oss << vendor << ": " << ingredient_info;
+            std::tuple<bool, std::string> vendor_return = vendor_finder.GetIngredientInfo(ingredient, vendor);
+            bool success = std::get<0>(vendor_return);
 
-            // If error occurred, annotate span
-            if (ingredient_info.compare(kGeneralErrorString) == 0) {
-                curr_vendor_span.AddAnnotation(kGeneralErrorString);
+            if (!success) {
+                std::string error_message = std::get<1>(vendor_return);
+                curr_vendor_span.AddAnnotation("ERROR: " + error_message);
+
+                curr_vendor_span.End();
+                vendor_span.End();
+                finder_span.End();
+                return Status(StatusCode::ABORTED, error_message);
             }
 
+            std::string ingredient_info = std::get<1>(vendor_return);
+            std::ostringstream oss;
+            oss << vendor << ": " << ingredient_info;
             reply->add_vendors_info(oss.str());
 
             curr_vendor_span.End();

@@ -33,6 +33,7 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::StatusCode;
 using food::InternalFoodService;
 using food::VendorRequest;
 using food::VendorReply;
@@ -63,10 +64,10 @@ class FoodVendorService final : public InternalFoodService::Service {
         std::this_thread::sleep_for(std::chrono::milliseconds(delay));
     }
 
-    // Decide whether to throw an error (20% chance)
+    // Decide whether to throw an error (25% chance)
     bool IsCreateRandomError() {
         srand(time(0));
-        int random_number = rand() % 5;
+        int random_number = rand() % 4;
         if (random_number == 0) {
             return true;
         }
@@ -79,7 +80,7 @@ class FoodVendorService final : public InternalFoodService::Service {
         CreateRandomDelay();
 
         if (IsCreateRandomError()) {
-            return Status::CANCELLED;
+            return Status(StatusCode::ABORTED, "Random Error");
         }
 
         const std::string vendor = request->vendor_name();
