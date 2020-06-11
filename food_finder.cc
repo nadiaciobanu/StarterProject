@@ -28,6 +28,7 @@
 
 #include "absl/strings/string_view.h"
 #include "opencensus/exporters/trace/zipkin/zipkin_exporter.h"
+#include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/span.h"
 
@@ -143,10 +144,7 @@ class FoodFinderService final : public ExternalFoodService::Service {
 
         static opencensus::trace::AlwaysSampler sampler;
 
-        // Enable the Zipkin trace exporter
-        opencensus::exporters::trace::ZipkinExporterOptions options = opencensus::exporters::trace::ZipkinExporterOptions(endpoint);
-        options.service_name = "FoodService";
-        opencensus::exporters::trace::ZipkinExporter::Register(options);
+        RegisterExporters();
 
         // Begin FoodFinder span
         opencensus::trace::Span finder_span = opencensus::trace::Span::StartSpan(
@@ -219,6 +217,30 @@ class FoodFinderService final : public ExternalFoodService::Service {
 
         finder_span.End();
         return Status::OK;
+    }
+
+ private:
+    void RegisterExporters() {
+        // Zipkin
+        opencensus::exporters::trace::ZipkinExporterOptions options = opencensus::exporters::trace::ZipkinExporterOptions(endpoint);
+        options.service_name = "FoodService";
+        opencensus::exporters::trace::ZipkinExporter::Register(options);
+
+        // StackDriver
+        const char* project_id = getenv("STACKDRIVER_PROJECT_ID");
+        if (project_id == nullptr) {
+            std::cerr << "The STACKDRIVER_PROJECT_ID environment variable is not set: "
+                        "not exporting to Stackdriver.\n";
+        }
+        else {
+            //std::cout << "RegisterStackdriverExporters:\n";
+            //std::cout << "  project_id = \"" << project_id << "\"\n";
+
+            opencensus::exporters::stats::StackdriverOptions stats_opts;
+            stats_opts.project_id = project_id;
+            opencensus::exporters::stats::StackdriverExporter::Register(
+                std::move(stats_opts));
+        }
     }
 };
 

@@ -50,6 +50,7 @@ cc_binary(
         # For OpenCensus
         "@io_opencensus_cpp//opencensus/trace",
         "@io_opencensus_cpp//opencensus/exporters/trace/zipkin:zipkin_exporter",
+        "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
