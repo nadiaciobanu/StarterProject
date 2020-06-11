@@ -33,6 +33,7 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::StatusCode;
 using food::InternalFoodService;
 using food::SupplierRequest;
 using food::SupplierReply;
@@ -73,7 +74,7 @@ class FoodSupplierService final : public InternalFoodService::Service {
         CreateRandomDelay();
 
         if (IsCreateRandomError()) {
-            return Status::CANCELLED;
+            return Status(StatusCode::ABORTED, "Random Error");
         }
 
         const std::string ingredient = request->ingredient();

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <tuple>
 
 #include <grpcpp/grpcpp.h>
 
@@ -22,7 +23,7 @@ class FoodClient {
     FoodClient(std::shared_ptr<Channel> channel)
             : stub_(ExternalFoodService::NewStub(channel)) {}
     
-    std::vector<std::string> GetVendorsInfo(const std::string& ingredient) {
+    std::tuple<bool, std::vector<std::string>> GetVendorsInfo(const std::string& ingredient) {
         FinderRequest request;
         request.set_ingredient(ingredient);
 
@@ -32,9 +33,8 @@ class FoodClient {
         Status status = stub_->GetVendorsInfo(&context, request, &reply);
 
         if (!status.ok()) {
-            std::cout << kGeneralErrorString << std::endl;
-                      //<< status.error_code() << ": " << status.error_message();
-            return {kGeneralErrorString};
+            std::vector<std::string> error = {status.error_message()};
+            return std::make_tuple(false, error);
         }
 
         std::vector<std::string> vendors_info = {};
@@ -43,7 +43,7 @@ class FoodClient {
             vendors_info.push_back(vendor);
         }
 
-        return vendors_info;
+        return std::make_tuple(true, vendors_info);
     } 
 
  private:
@@ -79,10 +79,16 @@ int main(int argc, char** argv) {
         FoodClient finder_client(grpc::CreateChannel(
                 finder_address, grpc::InsecureChannelCredentials()));
 
-        std::vector<std::string> vendors_with_info = finder_client.GetVendorsInfo(input_ingredient);
+        std::tuple<bool, std::vector<std::string>> finder_return = finder_client.GetVendorsInfo(input_ingredient);
+        bool success = std::get<0>(finder_return);
 
-        if (!(vendors_with_info.at(0)).compare(kGeneralErrorString) == 0) {
+        if (success) {
+            std::vector<std::string> vendors_with_info = std::get<1>(finder_return);
             PrintResults(vendors_with_info);
+        }
+        else {
+            std::string error_message = std::get<1>(finder_return).at(0);
+            std::cout << "ERROR: " << error_message << std::endl;
         }
     }
     return 0;
