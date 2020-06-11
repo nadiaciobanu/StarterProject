@@ -144,6 +144,12 @@ class FoodFinderService final : public ExternalFoodService::Service {
 
         static opencensus::trace::AlwaysSampler sampler;
 
+        // Register the OpenCensus gRPC plugin to enable stats and tracing in gRPC.
+        grpc::RegisterOpenCensusPlugin();
+
+        // Register the gRPC views (latency, error count, etc).
+        grpc::RegisterOpenCensusViewsForExport();
+
         RegisterExporters();
 
         // Begin FoodFinder span
