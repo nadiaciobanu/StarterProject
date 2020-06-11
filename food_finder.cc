@@ -152,6 +152,8 @@ class FoodFinderService final : public ExternalFoodService::Service {
         opencensus::trace::Span finder_span = opencensus::trace::Span::StartSpan(
             "FoodFinder", /* parent = */ nullptr, {&sampler});
         finder_span.AddAnnotation("Requested ingredient: " + ingredient);
+        opencensus::trace::GetCurrentSpan().SetStatus(
+          opencensus::trace::StatusCode::UNKNOWN, "Hello this is an error");
 
         // Begin FoodSupplier span
         opencensus::trace::Span supplier_span = opencensus::trace::Span::StartSpan(
