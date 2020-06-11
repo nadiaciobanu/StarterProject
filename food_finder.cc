@@ -159,7 +159,7 @@ class FoodFinder {
         absl::Time end = absl::Now();
         double latency = absl::ToDoubleMilliseconds(end - start);
         opencensus::stats::Record({{RPCLatencyMeasure(), latency}});
- 
+
         // Record RPC call
         opencensus::stats::Record({{RPCCountMeasure(), 1}});
 
