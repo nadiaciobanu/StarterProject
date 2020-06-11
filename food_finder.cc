@@ -164,6 +164,7 @@ class FoodFinderService final : public ExternalFoodService::Service {
         if (!success) {
             std::string error_message = std::get<1>(supplier_return).at(0);
             supplier_span.AddAnnotation("ERROR: " + error_message);
+            supplier_span.SetStatus(opencensus::trace::StatusCode::UNKNOWN);
 
             supplier_span.End();
             finder_span.End();
@@ -179,6 +180,7 @@ class FoodFinderService final : public ExternalFoodService::Service {
             supplier_span.End();
 
             reply->add_vendors_info("None");
+
             finder_span.End();
             return Status::OK;
         }
@@ -201,6 +203,7 @@ class FoodFinderService final : public ExternalFoodService::Service {
             if (!success) {
                 std::string error_message = std::get<1>(vendor_return);
                 curr_vendor_span.AddAnnotation("ERROR: " + error_message);
+                curr_vendor_span.SetStatus(opencensus::trace::StatusCode::UNKNOWN);
 
                 curr_vendor_span.End();
                 vendor_span.End();
@@ -216,9 +219,6 @@ class FoodFinderService final : public ExternalFoodService::Service {
             curr_vendor_span.End();
         }
         vendor_span.End();
-
-        finder_span.SetStatus(
-          opencensus::trace::StatusCode::UNKNOWN, "Hello this is an error");
         finder_span.End();
         return Status::OK;
     }
