@@ -70,11 +70,18 @@ class FoodFinder {
         context.set_deadline(std::chrono::system_clock::now() +
             std::chrono::milliseconds(kServerTimeout));
 
+        // Increment RPC count
+        opencensus::stats::Record({{rpc_count_measure, 1}}, {{status_key, !status.ok() ? "Error" : "OK"}});
+
         Status status = stub_->GetVendors(&context, request, &reply);
 
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
+
+            // Record error for metrics
+            opencensus::stats::Record({{rpc_errors_measure, 1}});
+
             std::string custom_error_message = "FoodSupplier " + status.error_message();
             std::vector<std::string> error = {custom_error_message};
 
@@ -107,6 +114,10 @@ class FoodFinder {
         if (!status.ok()) {
             std::cout << status.error_code() << ": " << status.error_message()
                       << std::endl;
+
+            // Record error for metrics
+            opencensus::stats::Record({{rpc_errors_measure, 1}});
+
             std::string custom_error_message = "FoodVendor " + status.error_message();
 
             return std::make_tuple(false, custom_error_message);
