@@ -39,19 +39,8 @@ using food::VendorRequest;
 using food::VendorReply;
 
 
-const std::map<std::string, std::map<std::string, float>> inventories = \
-    {
-        {"Costco", {{"eggs", 10}, {"milk", 45}, {"sugar", 24}}},
-        {"Safeway", {{"milk", 65}, {"sugar", 20}, {"flour", 58}}},
-        {"Superstore", {{"flour", 4}, {"sugar", 18}}}
-    };
-
-const std::map<std::string, std::map<std::string, float>> prices = \
-    {
-        {"Costco", {{"eggs", 1.00}, {"milk", 2.57}, {"sugar", 4.00}}},
-        {"Safeway", {{"milk", 3.50}, {"sugar", 3.00}, {"flour", 5.45}}},
-        {"Superstore", {{"flour", 2.00}, {"sugar", 3.35}}}
-    };
+const std::map<std::string, std::map<std::string, float>> * kInventories;
+const std::map<std::string, std::map<std::string, float>> * kPrices;
 
 
 class FoodVendorService final : public InternalFoodService::Service {
@@ -86,8 +75,8 @@ class FoodVendorService final : public InternalFoodService::Service {
         const std::string vendor = request->vendor_name();
         const std::string ingredient = request->ingredient();
 
-        const std::map<std::string, float> vendor_inventory = inventories.at(vendor);
-        const std::map<std::string, float> vendor_prices = prices.at(vendor);
+        const std::map<std::string, float> vendor_inventory = kInventories->at(vendor);
+        const std::map<std::string, float> vendor_prices = kPrices->at(vendor);
 
         const int ingredient_inventory = vendor_inventory.at(ingredient);
         const float ingredient_price = vendor_prices.at(ingredient);
@@ -101,9 +90,24 @@ class FoodVendorService final : public InternalFoodService::Service {
 
 void RunFoodVendor() {
     const std::string server_address = "localhost:50061";
-    FoodVendorService service;
 
+    kInventories = new std::map<std::string, std::map<std::string, float>>(
+        {
+            {"Costco", {{"eggs", 10}, {"milk", 45}, {"sugar", 24}}},
+            {"Safeway", {{"milk", 65}, {"sugar", 20}, {"flour", 58}}},
+            {"Superstore", {{"flour", 4}, {"sugar", 18}}}
+        });
+
+    kPrices = new std::map<std::string, std::map<std::string, float>>(
+        {
+            {"Costco", {{"eggs", 1.00}, {"milk", 2.57}, {"sugar", 4.00}}},
+            {"Safeway", {{"milk", 3.50}, {"sugar", 3.00}, {"flour", 5.45}}},
+            {"Superstore", {{"flour", 2.00}, {"sugar", 3.35}}}
+        });
+
+    FoodVendorService service;
     ServerBuilder builder;
+
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     builder.RegisterService(&service);
 
@@ -111,6 +115,9 @@ void RunFoodVendor() {
     std::cout << "Server listening on " << server_address << std::endl;
 
     server->Wait();
+
+    delete kInventories;
+    delete kPrices;
 }
 
 

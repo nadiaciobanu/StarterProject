@@ -39,13 +39,7 @@ using food::SupplierRequest;
 using food::SupplierReply;
 
 
-const std::map<std::string, std::vector<std::string>> vendor_map = \
-    {
-        {"eggs", {"Costco"}},
-        {"milk", {"Costco", "Safeway"}},
-        {"flour", {"Safeway", "Superstore"}},
-        {"sugar", {"Costco", "Safeway", "Superstore"}}
-    };
+const std::map<std::string, std::vector<std::string>> * kVendorMap;
 
 
 class FoodSupplierService final : public InternalFoodService::Service {
@@ -79,8 +73,8 @@ class FoodSupplierService final : public InternalFoodService::Service {
 
         const std::string ingredient = request->ingredient();
 
-        if (vendor_map.find(ingredient) != vendor_map.end()) {
-            std::vector<std::string> vendors = vendor_map.at(ingredient);
+        if (kVendorMap->find(ingredient) != kVendorMap->end()) {
+            std::vector<std::string> vendors = kVendorMap->at(ingredient);
 
             for (const std::string& vendor : vendors) {
                 reply->add_vendors(vendor);
@@ -93,8 +87,16 @@ class FoodSupplierService final : public InternalFoodService::Service {
 
 void RunFoodSupplier() {
     const std::string server_address = "localhost:50051";
-    FoodSupplierService service;
 
+    kVendorMap = new std::map<std::string, std::vector<std::string>>(
+        {
+            {"eggs", {"Costco"}},
+            {"milk", {"Costco", "Safeway"}},
+            {"flour", {"Safeway", "Superstore"}},
+            {"sugar", {"Costco", "Safeway", "Superstore"}}
+        });
+
+    FoodSupplierService service;
     ServerBuilder builder;
 
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
@@ -103,6 +105,8 @@ void RunFoodSupplier() {
     std::cout << "Server listening on " << server_address << std::endl;
 
     server->Wait();
+
+    delete kVendorMap;
 }
 
 
