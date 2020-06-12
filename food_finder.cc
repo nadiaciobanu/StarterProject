@@ -331,7 +331,7 @@ void RegisterViews() {
     RPCLatencyMeasure();
     opencensus::stats::ViewDescriptor()
         .set_name("FoodService/RPCLatency")
-        .set_description("Numer of RPC calls")
+        .set_description("Latency of RPC calls")
         .set_measure(kRPCCountMeasureName)
         .set_aggregation(opencensus::stats::Aggregation::Distribution(
           opencensus::stats::BucketBoundaries::Explicit(
