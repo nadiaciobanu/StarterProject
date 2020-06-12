@@ -53,6 +53,9 @@ cc_binary(
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
+        # For metrics
+        "@com_github_grpc_grpc//:grpc_opencensus_plugin",
+        "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
     ],
 )
 
