@@ -26,8 +26,11 @@
 #include <cstdlib>
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/opencensus.h>
 
 #include "food.grpc.pb.h"
+#include "opencensus/trace/context_util.h"
+#include "opencensus/trace/span.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -71,6 +74,9 @@ class FoodSupplierService final : public InternalFoodService::Service {
     // Called by FoodFinder
     Status GetVendors(ServerContext* context, const SupplierRequest* request,
                       SupplierReply* reply) override {
+        opencensus::trace::Span span = grpc::GetSpanFromServerContext(context);
+        span.AddAttribute("my_attribute", "red");
+
         CreateRandomDelay();
 
         if (IsCreateRandomError()) {

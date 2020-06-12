@@ -64,6 +64,10 @@ cc_binary(
         ":food_cc_grpc",
         # http_archive made this label available for binding
         "@com_github_grpc_grpc//:grpc++",
+        # For OpenCensus
+        "@io_opencensus_cpp//opencensus/trace",
+        "@io_opencensus_cpp//opencensus/trace:context_util",
+        "@com_github_grpc_grpc//:grpc_opencensus_plugin",
     ],
 )
 
