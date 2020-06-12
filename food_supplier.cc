@@ -58,10 +58,10 @@ class FoodSupplierService final : public InternalFoodService::Service {
         std::this_thread::sleep_for(std::chrono::milliseconds(delay));
     }
 
-    // Decide whether to throw an error (20% chance)
+    // Decide whether to throw an error (10% chance)
     bool IsCreateRandomError() {
         srand(time(0));
-        int random_number = rand() % 5;
+        int random_number = rand() % 10;
         if (random_number == 0) {
             return true;
         }
