@@ -1,7 +1,5 @@
 /*
  *
- * Copyright 2015 gRPC authors.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -94,6 +92,8 @@ class FoodFinder {
             : stub_(InternalFoodService::NewStub(channel)) {}
 
     // Call to FoodSupplier
+    // Return bool to signal success or failure.
+    // If success, also return list of vendors. If failure, also return error string.
     std::tuple<bool, std::vector<std::string>> GetVendors(const std::string& ingredient) {
         SupplierRequest request;
         request.set_ingredient(ingredient);
@@ -139,6 +139,8 @@ class FoodFinder {
     }
 
     // Call to FoodVendor
+    // Return bool to signal success or failure.
+    // If success, also return ingredient info. If failure, also return error string.
     std::tuple<bool, std::string> GetIngredientInfo(const std::string& ingredient, const std::string& vendorName) {
         VendorRequest request;
         request.set_ingredient(ingredient);
@@ -191,19 +193,19 @@ class FoodFinder {
 
 
 class FoodFinderService final : public ExternalFoodService::Service {
-    const std::string supplier_address = "localhost:50051";
-    const std::string vendor_address = "localhost:50061";
-    const absl::string_view endpoint = "http://localhost:9411/api/v2/spans";
+    const std::string supplier_address_ = "localhost:50051";
+    const std::string vendor_address_ = "localhost:50061";
+    const absl::string_view endpoint_ = "http://localhost:9411/api/v2/spans";
 
     Status GetVendorsInfo(ServerContext* context, const FinderRequest* request,
                       FinderReply* reply) override {
         const std::string ingredient = request->ingredient();
         
         FoodFinder supplier_finder(grpc::CreateChannel(
-                supplier_address, grpc::InsecureChannelCredentials()));
+                supplier_address_, grpc::InsecureChannelCredentials()));
 
         FoodFinder vendor_finder(grpc::CreateChannel(
-                vendor_address, grpc::InsecureChannelCredentials()));
+                vendor_address_, grpc::InsecureChannelCredentials()));
 
         static opencensus::trace::AlwaysSampler sampler;
 
@@ -289,7 +291,7 @@ class FoodFinderService final : public ExternalFoodService::Service {
  private:
     void RegisterExporters() {
         // Zipkin
-        opencensus::exporters::trace::ZipkinExporterOptions options = opencensus::exporters::trace::ZipkinExporterOptions(endpoint);
+        opencensus::exporters::trace::ZipkinExporterOptions options = opencensus::exporters::trace::ZipkinExporterOptions(endpoint_);
         options.service_name = "FoodService";
         opencensus::exporters::trace::ZipkinExporter::Register(options);
 

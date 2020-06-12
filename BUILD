@@ -61,7 +61,7 @@ cc_binary(
 
 cc_binary(
     name = "food_supplier",
-    srcs = ["food_supplier.cc"],
+    srcs = ["food_supplier.cc", "food_supplier.h"],
     defines = ["BAZEL_BUILD"],
     deps = [
         ":food_cc_grpc",

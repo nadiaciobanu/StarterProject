@@ -23,6 +23,10 @@ class FoodClient {
     FoodClient(std::shared_ptr<Channel> channel)
             : stub_(ExternalFoodService::NewStub(channel)) {}
     
+    // Call to FoodFinder
+    // Return bool to signal success or failure.
+    // If success, also return list of vendors with vendor information.
+    // If failure, also return error string.
     std::tuple<bool, std::vector<std::string>> GetVendorsInfo(const std::string& ingredient) {
         FinderRequest request;
         request.set_ingredient(ingredient);
