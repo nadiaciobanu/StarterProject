@@ -1,89 +1,48 @@
-/*
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-#include <iostream>
-#include <memory>
-#include <string>
-#include <map>
-#include <chrono>
-#include <thread>
-#include <ctime>
-#include <cstdlib>
-
-#include <grpcpp/grpcpp.h>
-
-#include "food.grpc.pb.h"
-
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::Status;
-using grpc::StatusCode;
-using food::InternalFoodService;
-using food::VendorRequest;
-using food::VendorReply;
+#include "food_vendor.h"
 
 
-const std::map<std::string, std::map<std::string, float>> * kInventories;
-const std::map<std::string, std::map<std::string, float>> * kPrices;
+// Create delay between 0 and 99 milliseconds
+void FoodVendorService::CreateRandomDelay() {
+    srand(time(0));
+    int delay = rand() % 100;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+}
 
 
-class FoodVendorService final : public InternalFoodService::Service {
+// Decide whether to throw an error (12.5% chance)
+bool FoodVendorService::IsCreateRandomError() {
+    srand(time(0));
+    int random_number = rand() % 8;
+    if (random_number == 0) {
+        return true;
+    }
+    return false;
+}
 
-    // Create delay between 0 and 99 milliseconds
-    void CreateRandomDelay() {
-        srand(time(0));
-        int delay = rand() % 100;
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+// Called by FoodFinder
+Status FoodVendorService::GetIngredientInfo(ServerContext* context, const VendorRequest* request,
+                            VendorReply* reply) {
+    CreateRandomDelay();
+
+    if (IsCreateRandomError()) {
+        return Status(StatusCode::ABORTED, "Random Error");
     }
 
-    // Decide whether to throw an error (12.5% chance)
-    bool IsCreateRandomError() {
-        srand(time(0));
-        int random_number = rand() % 8;
-        if (random_number == 0) {
-            return true;
-        }
-        return false;
-    }
+    const std::string vendor = request->vendor_name();
+    const std::string ingredient = request->ingredient();
 
-    // Called by FoodFinder
-    Status GetIngredientInfo(ServerContext* context, const VendorRequest* request,
-                             VendorReply* reply) override {
-        CreateRandomDelay();
+    const std::map<std::string, float> vendor_inventory = kInventories->at(vendor);
+    const std::map<std::string, float> vendor_prices = kPrices->at(vendor);
 
-        if (IsCreateRandomError()) {
-            return Status(StatusCode::ABORTED, "Random Error");
-        }
+    const int ingredient_inventory = vendor_inventory.at(ingredient);
+    const float ingredient_price = vendor_prices.at(ingredient);
 
-        const std::string vendor = request->vendor_name();
-        const std::string ingredient = request->ingredient();
-
-        const std::map<std::string, float> vendor_inventory = kInventories->at(vendor);
-        const std::map<std::string, float> vendor_prices = kPrices->at(vendor);
-
-        const int ingredient_inventory = vendor_inventory.at(ingredient);
-        const float ingredient_price = vendor_prices.at(ingredient);
-
-        reply->set_inventory_count(ingredient_inventory);
-        reply->set_price(ingredient_price);
-        return Status::OK;
-    }
-};
+    reply->set_inventory_count(ingredient_inventory);
+    reply->set_price(ingredient_price);
+    return Status::OK;
+}
 
 
 void RunFoodVendor() {

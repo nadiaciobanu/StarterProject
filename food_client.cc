@@ -1,58 +1,29 @@
-#include <iostream>
-#include <string>
-#include <tuple>
-
-#include <grpcpp/grpcpp.h>
-
-#include "food.grpc.pb.h"
-
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
-using food::ExternalFoodService;
-using food::FinderRequest;
-using food::FinderReply;
-
-const std::string kGeneralErrorString = "ERROR";
-const std::string kUserWelcomeMessage = "Welcome to FoodFinder!";
-const std::string kUserInputPrompt = "Please input the ingredient you would like to find: ";
+#include "food_client.h"
 
 
-class FoodClient {
- public:
-    FoodClient(std::shared_ptr<Channel> channel)
-            : stub_(ExternalFoodService::NewStub(channel)) {}
-    
-    // Call to FoodFinder
-    // Return bool to signal success or failure.
-    // If success, also return list of vendors with vendor information.
-    // If failure, also return error string.
-    std::tuple<bool, std::vector<std::string>> GetVendorsInfo(const std::string& ingredient) {
-        FinderRequest request;
-        request.set_ingredient(ingredient);
+// Call to FoodFinder
+std::tuple<bool, std::vector<std::string>> FoodClient::GetVendorsInfo(const std::string& ingredient) {
+    FinderRequest request;
+    request.set_ingredient(ingredient);
 
-        FinderReply reply;
-        ClientContext context;
+    FinderReply reply;
+    ClientContext context;
 
-        Status status = stub_->GetVendorsInfo(&context, request, &reply);
+    Status status = stub_->GetVendorsInfo(&context, request, &reply);
 
-        if (!status.ok()) {
-            std::vector<std::string> error = {status.error_message()};
-            return std::make_tuple(false, error);
-        }
+    if (!status.ok()) {
+        std::vector<std::string> error = {status.error_message()};
+        return std::make_tuple(false, error);
+    }
 
-        std::vector<std::string> vendors_info = {};
+    std::vector<std::string> vendors_info = {};
 
-        for (const std::string& vendor : reply.vendors_info()) {
-            vendors_info.push_back(vendor);
-        }
+    for (const std::string& vendor : reply.vendors_info()) {
+        vendors_info.push_back(vendor);
+    }
 
-        return std::make_tuple(true, vendors_info);
-    } 
-
- private:
-    std::unique_ptr<ExternalFoodService::Stub> stub_;
-};
+    return std::make_tuple(true, vendors_info);
+}
 
 
 std::string GetUserInput() {

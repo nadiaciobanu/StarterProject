@@ -17,12 +17,14 @@ using grpc::ServerContext;
 using grpc::Status;
 using grpc::StatusCode;
 using food::InternalFoodService;
-using food::SupplierRequest;
-using food::SupplierReply;
+using food::VendorRequest;
+using food::VendorReply;
 
-const std::map<std::string, std::vector<std::string>> * kVendorMap;
+const std::map<std::string, std::map<std::string, float>> * kInventories;
+const std::map<std::string, std::map<std::string, float>> * kPrices;
 
-class FoodSupplierService final : public InternalFoodService::Service {
+class FoodVendorService final : public InternalFoodService::Service {
+
     // Create delay between 0 and 99 milliseconds
     void CreateRandomDelay();
 
@@ -30,8 +32,8 @@ class FoodSupplierService final : public InternalFoodService::Service {
     bool IsCreateRandomError();
 
     // Called by FoodFinder
-    Status GetVendors(ServerContext* context, const SupplierRequest* request,
-                      SupplierReply* reply) override;
+    Status GetIngredientInfo(ServerContext* context, const VendorRequest* request,
+                             VendorReply* reply) override;
 };
 
-RunFoodSupplier();
+void RunFoodVendor();
