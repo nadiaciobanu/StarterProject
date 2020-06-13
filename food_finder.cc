@@ -160,6 +160,7 @@ Status FoodFinderService::GetVendorsInfo(ServerContext* context, const FinderReq
     if (!success) {
         std::string error_message = std::get<1>(supplier_return).at(0);
         supplier_span.AddAnnotation("ERROR: " + error_message);
+        supplier_span.SetStatus(opencensus::trace::StatusCode::UNKNOWN);
 
         supplier_span.End();
         finder_span.End();
@@ -197,6 +198,7 @@ Status FoodFinderService::GetVendorsInfo(ServerContext* context, const FinderReq
         if (!success) {
             std::string error_message = std::get<1>(vendor_return);
             curr_vendor_span.AddAnnotation("ERROR: " + error_message);
+            curr_vendor_span.SetStatus(opencensus::trace::StatusCode::UNKNOWN);
 
             curr_vendor_span.End();
             vendor_span.End();
