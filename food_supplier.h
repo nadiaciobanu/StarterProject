@@ -2,14 +2,11 @@
 #include <memory>
 #include <string>
 #include <map>
-#include <chrono>
-#include <thread>
-#include <ctime>
-#include <cstdlib>
 
 #include <grpcpp/grpcpp.h>
 
 #include "food.grpc.pb.h"
+#include "food_utils.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -23,15 +20,13 @@ using food::SupplierReply;
 const std::map<std::string, std::vector<std::string>> * kVendorMap;
 
 class FoodSupplierService final : public InternalFoodService::Service {
-    // Create delay between 0 and 99 milliseconds
-    void CreateRandomDelay();
-
-    // Decide whether to throw an error (12.5% chance)
-    bool IsCreateRandomError();
-
     // Called by FoodFinder
     Status GetVendors(ServerContext* context, const SupplierRequest* request,
                       SupplierReply* reply) override;
+
+ private:
+    const int kMaxRandomDelay_ = 100;
+    const int kRandomErrorChanceDenom_ = 8;
 };
 
-RunFoodSupplier();
+void RunFoodSupplier();

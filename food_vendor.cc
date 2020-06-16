@@ -1,32 +1,12 @@
 #include "food_vendor.h"
 
 
-// Create delay between 0 and 99 milliseconds
-void FoodVendorService::CreateRandomDelay() {
-    srand(time(0));
-    int delay = rand() % 100;
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay));
-}
-
-
-// Decide whether to throw an error (12.5% chance)
-bool FoodVendorService::IsCreateRandomError() {
-    srand(time(0));
-    int random_number = rand() % 8;
-    if (random_number == 0) {
-        return true;
-    }
-    return false;
-}
-
-
 // Called by FoodFinder
 Status FoodVendorService::GetIngredientInfo(ServerContext* context, const VendorRequest* request,
                             VendorReply* reply) {
-    CreateRandomDelay();
+    CreateRandomDelay(kMaxRandomDelay_);
 
-    if (IsCreateRandomError()) {
+    if (IsCreateRandomError(kRandomErrorChanceDenom_)) {
         return Status(StatusCode::ABORTED, "Random Error");
     }
 
