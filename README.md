@@ -41,7 +41,7 @@ To view traces in Zipkin, install [Zipkin](https://zipkin.io/pages/quickstart) a
 
 You can also export traces from Zipkin to GCP by creating a GCP project and following these [instructions](https://cloud.google.com/trace/docs/zipkin).
 
-![Trace](https://user-images.githubusercontent.com/14475923/84815524-032fb680-afc8-11ea-9a63-a38e31f3c4bf.png)
+![Trace_GCP](https://user-images.githubusercontent.com/14475923/84826762-4abe3e80-afd8-11ea-820a-6ee4e43940aa.png)
 
 ### Metrics in Google Cloud Platform
 
