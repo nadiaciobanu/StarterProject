@@ -39,7 +39,7 @@ cc_grpc_library(
 
 cc_binary(
     name = "food_finder",
-    srcs = ["food_finder.cc", "food_finder.h"],
+    srcs = ["food_finder.cc", "include/food_finder.h"],
     defines = ["BAZEL_BUILD"],
     deps = [
         ":food_cc_grpc",
@@ -59,7 +59,7 @@ cc_binary(
 
 cc_binary(
     name = "food_supplier",
-    srcs = ["food_supplier.cc", "food_supplier.h", "food_utils.cc", "food_utils.h"],
+    srcs = ["food_supplier.cc", "include/food_supplier.h", "food_utils.cc", "include/food_utils.h"],
     defines = ["BAZEL_BUILD"],
     deps = [
         ":food_cc_grpc",
@@ -70,7 +70,7 @@ cc_binary(
 
 cc_binary(
     name = "food_vendor",
-    srcs = ["food_vendor.cc", "food_vendor.h", "food_utils.cc", "food_utils.h"],
+    srcs = ["food_vendor.cc", "include/food_vendor.h", "food_utils.cc", "include/food_utils.h"],
     defines = ["BAZEL_BUILD"],
     deps = [
         ":food_cc_grpc",
@@ -81,7 +81,7 @@ cc_binary(
 
 cc_binary(
     name = "food_client",
-    srcs = ["food_client.cc", "food_client.h"],
+    srcs = ["food_client.cc", "include/food_client.h"],
     defines = ["BAZEL_BUILD"],
     deps = [
         ":food_cc_grpc",
