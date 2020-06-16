@@ -27,4 +27,24 @@ Then run the client:
 
 Make sure `FoodSupplier`, `FoodVendor` and `FoodFinder` are running before attempting to run `FoodClient`.
 
-To view traces, install [Zipkin](https://zipkin.io/pages/quickstart) and visit http://localhost:9411/zipkin
+## Telemetry
+
+This project has been instrumented using [OpenCensus](https://opencensus.io/). You can export traces and metrics produced by interactions between the food services. Currently, the project supports exporting traces to Zipkin or GCP, and metrics to GCP.
+
+### Traces in Zipkin
+
+To view traces in Zipkin, install [Zipkin](https://zipkin.io/pages/quickstart) and visit http://localhost:9411/zipkin.
+
+![Zipkin](https://user-images.githubusercontent.com/14475923/84815064-4dfcfe80-afc7-11ea-97fa-53e4feefdec3.png)
+
+### Traces in Google Cloud Platform
+
+You can also export traces from Zipkin to GCP by creating a GCP project and following these [instructions](https://cloud.google.com/trace/docs/zipkin).
+
+![Trace](https://user-images.githubusercontent.com/14475923/84815524-032fb680-afc8-11ea-9a63-a38e31f3c4bf.png)
+
+### Metrics in Google Cloud Platform
+
+You can export metrics to GCP using [Stackdriver](https://cloud.google.com/products/operations). Just set your `STACKDRIVER_PROJECT_ID` environment variable to the name of your GCP project.
+
+![Metrics](https://user-images.githubusercontent.com/14475923/84816082-d039f280-afc8-11ea-876f-9e96644ea1fd.png)
